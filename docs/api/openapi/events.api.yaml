@@ -1,0 +1,24 @@
+openapi: 3.0.3
+info:
+  title: "CONVERT Events API"
+  version: "0.1.0-sprint1"
+
+paths:
+  /events/domain:
+    post:
+      summary: "Publish Domain Event"
+      responses:
+        '202':
+          description: "Event accepted"
+
+components:
+  schemas:
+    BaseEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: "^evt-[a-f0-9]{12}$"
+        type:
+          type: string
+          enum: ["domain", "interaction", "memory"]

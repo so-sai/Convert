@@ -1,0 +1,25 @@
+id: "DEC-ARCH-001"
+title: "Triple-Stream Event Sourcing Architecture" 
+date: "2025-11-20"
+status: "accepted"
+
+context: |
+  CONVERT needs three perspectives for self-aware architecture:
+  1. WHAT happened (Domain Events - state changes)
+  2. HOW it happened (Interaction Events - user behavior) 
+  3. WHY it happened (Memory Events - AI/system reasoning)
+
+decision: |
+  Implement Triple-Stream Event Sourcing:
+  - DomainEvent: State transitions (note_created, note_updated)
+  - InteractionEvent: User behavior (portal_opened, search_performed)  
+  - MemoryEvent: System reasoning (decision_made, alternative_considered)
+
+consequences: |
+  Positive:
+  - Enables temporal reasoning and context-aware AI
+  - Provides audit trail for system decisions
+  
+  Negative:
+  - Increased storage requirements
+  - More complex query patterns
