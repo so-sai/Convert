@@ -1,6 +1,6 @@
-# MDS v3.14 - THE ETERNAL PYTHON CORE (GRAND UNIFIED)
+# 📘 MDS v3.14 - THE ETERNAL PYTHON CORE (GRAND UNIFIED)
 
-> **Status:** SPRINT 3 ACTIVE
+> **Status:** SPRINT 3 COMPLETED
 > **Engine:** Python 3.14.0 (Free-Threading `cp314t`)
 > **Philosophy:** "Infinite like Pi, Fast like Python, Secure like Rust."
 > **Base:** Merged from v3.1-ETERNAL & v4.0-SECURE
@@ -97,14 +97,12 @@ CREATE TABLE notes (
 completed:
   - [Sprint 1] Architecture Foundation
   - [Sprint 2] Core Backend & Database (Fixed BIGINT/Import issues)
+  - [Sprint 3] Plugin System & Storage Hardening (ALL TASKS COMPLETED)
 
 current_focus:
-  - [Sprint 3] Plugin System & Storage Hardening
-    - Task A: Enforce HMAC + BLOB in StorageAdapter (COMPLETED - Remediation Applied).
-    - Task B: Build Internal Plugin Loader (Safe Import) (COMPLETED).
+  - [Sprint 4] Passkey Auth & Real Encryption (XChaCha20).
 
 next_sprint:
-  - [Sprint 4] Passkey Auth & Real Encryption (XChaCha20).
   - [Sprint 5] WASM Sandbox & P2P Sync.
 ```
 
@@ -118,13 +116,21 @@ next_sprint:
 
 ## 8. CRITICAL INVARIANTS (THE 10 COMMANDMENTS)
 
-1.  **Execution:** Always use `python -m src.core.main` from sprint root.
+1.  **Execution:** Always use `python -m <module>` (e.g., `src.core.main`). NEVER call scripts directly.
 2.  **Database:** `INTEGER` only. No `BIGINT`.
 3.  **Payload:** Always `BLOB`.
 4.  **Integrity:** Verify HMAC on Read. Crash on failure.
-5.  **Isolation:** Plugins must use defined Interface (`IPlugin`).
-6.  **Path:** Use `pathlib` & `encoding='utf-8'`.
-7.  **Hygiene:** No trash files in Git.
-8.  **Deps:** Strict version pinning.
-9.  **Auth:** No passwords. Passkey only (Future).
+5.  **Isolation:** Plugins must use defined Protocol (`IPlugin`) & reside in `src/core/plugin`.
+6.  **Path:** Use `pathlib` & `encoding='utf-8'`. Single backslash (`/`) normalization only.
+7.  **Hygiene:** Monorepo Strictness: Code stays in `src/core`. No `sprint-x` folders.
+8.  **Deps:** `requirements.txt` is the Single Source of Truth.
+9.  **Platform:** Windows launcher bypass: Use `python -m PyInstaller` instead of `pyinstaller`.
 10. **Concurrency:** Thread-safe code for No-GIL environment.
+
+## 9. SPRINT 3 RETROSPECTIVE (LESSONS LEARNED)
+Ref: Engineering Playbook (`docs/policies/ENGINEERING_PLAYBOOK.md`)
+
+- **The Windows Protocol:** Direct command calls (like `pytest`, `pyinstaller`) fail on Windows environments with multiple Python versions. **Fix:** Always prefix with `python -m`.
+- **The Protocol Check:** Python 3.14 does not allow `issubclass` checks on Protocols with non-method members (data attributes). **Fix:** Use `isinstance` or valid runtime checks.
+- **The Overwrite Strategy:** To avoid AI hallucinating line numbers, always overwrite config files (`.spec`, `.txt`) completely using `cat << 'EOF'`.
+- **Build Hygiene:** PyInstaller fails if target directories (even empty ones like `config`) do not exist. Always `mkdir` before build.

@@ -16,3 +16,8 @@ src-tauri/Cargo.lock
 # IDE
 .vscode/
 .idea/
+build/
+dist/
+__pycache__/
+build/
+dist/

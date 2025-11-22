@@ -16,12 +16,14 @@ future_proof: "Language/runtime upgrades (e.g., Python 3.20+) must propagate via
 
 ```
 backend:
-  language: "Python 3.14+ → future-proof upgrades"
-  async: "asyncio + aiosqlite"
-  database: "SQLite WAL STRICT"
-  crypto: "cryptography HKDF/HMAC-SHA3-256"
-  serialization: "orjson canonical"
-  validation: "Pydantic v2 strict"
+  language: "Python 3.14"
+  dependencies:
+    - "fastapi==0.121.3"     # Security patched
+    - "uvicorn==0.38.0"      # Py3.14 compatible
+    - "orjson==3.11.4"       # Pre-compiled binary wheel (No Rust needed)
+    - "aiosqlite==0.21.0"    # Async SQLite
+  execution_mode: "python -m src.core.main"
+  database_schema: "SQLite STRICT (INTEGER only, No BIGINT)"
 
 frontend:
   framework: "Svelte 5"
@@ -126,21 +128,14 @@ CREATE VIRTUAL TABLE notes_fts USING fts5(
 
 ```
 completed:
-  - triple-stream event model
-  - cryptographic integrity chain
-  - DDL finalized
-  - Python scaffold
-  - Security audit
+  - [Sprint 1] Architecture Foundation
+  - [Sprint 2] Core Backend & Database (Fixed BIGINT/Import issues)
 
-in_progress:
-  - StorageAdapter implementation
-  - PassThroughEncryptionService + HMAC
-  - Concurrency tests
-  - Home Dashboard prototype
+current_focus:
+  - [Sprint 3] Plugin System & Frontend Bridge
 
 next_sprint:
   - Real encryption migration
-  - Plugin system sandbox
   - Tea-RAG knowledge graph
   - Multi-device sync
 ```
