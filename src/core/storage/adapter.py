@@ -1,175 +1,93 @@
-import asyncio
-import logging
-import sqlite3
-import hashlib
-import hmac
-from typing import AsyncIterator, Dict, Any, Optional, List
-from pathlib import Path
+# ------------------------------------------------------------------------------
+# PROJECT CONVERT (C) 2025
+# Licensed under PolyForm Noncommercial 1.0.
+# ------------------------------------------------------------------------------
 
-from src.core.storage.database import DatabaseManager
-from src.core.crypto.hmac_service import HMACService
-from src.core.utils.canonical import canonical_bytes
+import aiosqlite
+import orjson
+import logging
+import time
+import hashlib
+from pathlib import Path
+from typing import List, Dict, Any
+from ..security.kms import KMS
+from ..security.encryption import EncryptionService, TamperDetectedError
 
 logger = logging.getLogger(__name__)
 
-class StorageIntegrityError(Exception):
-    """Raised when storage integrity verification fails."""
-    pass
-
-from src.core.security.background_verifier import BackgroundChainVerifier
-
-class HardenedStorageAdapter:
-    def __init__(self, db_path: Path, hmac_service: HMACService):
+class StorageAdapter:
+    def __init__(self, db_path: Path, kms: KMS):
         self.db_path = db_path
-        self._db_manager = DatabaseManager(db_path)
-        self.hmac_service = hmac_service
-        self.verifier = BackgroundChainVerifier(self)
+        self.kms = kms
+        self._init_done = False
 
-    async def initialize(self):
-        await self._db_manager.connect()
-
-    async def close(self):
-        self.verifier.shutdown()
-        await self._db_manager.close()
-
-    async def append_event(
-        self,
-        stream_type: str,
-        stream_id: str,
-        event_type: str,
-        payload: Dict[str, Any],
-        timestamp: int
-    ) -> str:
-        """
-        Append an event with cryptographic integrity enforcement.
-        """
-        payload_bytes = canonical_bytes(payload)
-        
-        async with self._db_manager.transaction() as conn:
-            # 1. Get previous event hash and sequence
-            cursor = await conn.execute(
-                """
-                SELECT stream_sequence, event_hash 
-                FROM domain_events 
-                WHERE stream_type = ? AND stream_id = ? 
-                ORDER BY stream_sequence DESC LIMIT 1
-                """,
-                (stream_type, stream_id)
-            )
-            row = await cursor.fetchone()
-            
-            if row:
-                prev_seq, prev_hash = row
-                stream_sequence = prev_seq + 1
-            else:
-                stream_sequence = 1
-                prev_hash = None
-
-            # 2. Get global sequence (atomic increment via DB constraint/autoincrement logic or max)
-            # For strict ordering, we usually rely on a separate counter or max+1. 
-            # Here we'll use max+1 for simplicity in this adapter, though a sequence generator is better for high concurrency.
-            cursor = await conn.execute("SELECT MAX(global_sequence) FROM domain_events")
-            max_global = (await cursor.fetchone())[0]
-            global_sequence = (max_global or 0) + 1
-
-            # 3. Compute Event Hash: SHA3-256(prev_hash || payload_bytes)
-            # If prev_hash is None (genesis), use empty bytes or specific genesis marker.
-            # We'll use empty bytes for genesis prev_hash in computation.
-            prev_hash_bytes = prev_hash if prev_hash else b""
-            
-            event_hash = hashlib.sha3_256(prev_hash_bytes + payload_bytes).digest()
-            
-            # 4. Compute HMAC
-            event_hmac, key_version = self.hmac_service.sign(payload_bytes, stream_id)
-            
-            # 5. Insert
-            event_id = f"{stream_type}-{stream_id}-{stream_sequence}"
-            
-            await conn.execute(
-                """
-                INSERT INTO domain_events (
-                    event_id, stream_type, stream_id, event_type, 
-                    stream_sequence, global_sequence, timestamp, 
-                    payload, prev_event_hash, event_hash, 
-                    event_hmac, hmac_key_version
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    event_id, stream_type, stream_id, event_type,
-                    stream_sequence, global_sequence, timestamp,
-                    payload_bytes, prev_hash, event_hash,
-                    event_hmac, key_version
+    async def _ensure_schema(self):
+        if self._init_done: return
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        async with aiosqlite.connect(self.db_path) as db:
+            # Matches Schema Rev 2 (ADR-002 Rev 2)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS domain_events (
+                    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    stream_type TEXT NOT NULL,
+                    stream_id TEXT NOT NULL,
+                    payload BLOB NOT NULL,       -- Ciphertext
+                    enc_algorithm TEXT DEFAULT 'XChaCha20-Poly1305',
+                    enc_key_id TEXT DEFAULT 'v1',
+                    enc_nonce BLOB,              -- 24 bytes
+                    
+                    event_hmac BLOB NOT NULL,    -- HMAC-SHA3-256 (Chain)
+                    event_hash BLOB,             -- Current Hash (Simplification)
+                    timestamp INTEGER NOT NULL,
+                    
+                    quarantine INTEGER DEFAULT 0,
+                    tamper_reason TEXT
                 )
-            )
-            
-            return event_id
+            """)
+            await db.commit()
+        self._init_done = True
 
-    async def get_events(
-        self,
-        stream_type: str,
-        stream_id: str,
-        after_seq: int = 0
-    ) -> AsyncIterator[Dict[str, Any]]:
-        """
-        Yield events with on-the-fly HMAC verification.
-        """
-        # Note: We are NOT using a transaction here for the *entire* iteration 
-        # because it might be long-lived. However, for strict consistency, snapshot isolation is good.
-        # But aiosqlite cursors fetch eagerly or in batches.
-        # For verification safety, we should ideally verify the chain.
+    async def save_event(self, stream_type: str, stream_id: str, payload: Dict) -> int:
+        dek, hmac_key = self.kms.get_keys() # Check lock & get derived keys
+        await self._ensure_schema()
         
-        # We will verify each event as we yield it.
+        json_bytes = orjson.dumps(payload)
         
-        async with self._db_manager.transaction() as conn:
-             cursor = await conn.execute(
-                """
-                SELECT event_id, stream_sequence, timestamp, payload, 
-                       prev_event_hash, event_hash, event_hmac, hmac_key_version
-                FROM domain_events 
-                WHERE stream_type = ? AND stream_id = ? AND stream_sequence > ?
-                ORDER BY stream_sequence ASC
-                """,
-                (stream_type, stream_id, after_seq)
+        # Encrypt + Chain HMAC
+        enc_blob, nonce, event_hmac = EncryptionService.encrypt_event(dek, hmac_key, json_bytes)
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            cur = await db.execute(
+                """INSERT INTO domain_events 
+               (stream_type, stream_id, payload, enc_nonce, event_hmac, timestamp) 
+               VALUES (?, ?, ?, ?, ?, ?)""",
+                (stream_type, stream_id, enc_blob, nonce, event_hmac, int(time.time()))
             )
-             
-             # We need to track prev_hash to verify chain continuity during iteration
-             # But if we start from after_seq > 0, we need the hash of event at after_seq.
-             # For simplicity, we verify the hash *of the current event* against its stored prev_hash
-             # and its payload. We don't strictly verify the link to the *previous* yielded event 
-             # unless we fetch it. 
-             # Strict chain verification is done by verify_chain().
-             # Here we verify:
-             # 1. HMAC matches payload
-             # 2. event_hash matches SHA3(prev_hash || payload)
-             
-             rows = await cursor.fetchall()
-             
-             for row in rows:
-                 (eid, seq, ts, payload, prev_hash, ev_hash, ev_hmac, key_ver) = row
-                 
-                 # 1. Verify HMAC
-                 if not self.hmac_service.verify(payload, ev_hmac, stream_id, key_ver):
-                     raise StorageIntegrityError(f"HMAC mismatch for event {eid}")
-                 
-                 # 2. Verify Event Hash
-                 prev_hash_bytes = prev_hash if prev_hash else b""
-                 computed_hash = hashlib.sha3_256(prev_hash_bytes + payload).digest()
-                 
-                 # Constant time comparison for hash
-                 if not hmac.compare_digest(computed_hash, ev_hash):
-                      raise StorageIntegrityError(f"Event Hash mismatch for event {eid}")
-                 
-                 yield {
-                     "event_id": eid,
-                     "stream_sequence": seq,
-                     "timestamp": ts,
-                     "payload": payload, # Returns bytes (BLOB)
-                     "event_hash": ev_hash
-                 }
+            await db.commit()
+            return cur.lastrowid
 
-    async def verify_chain_non_blocking(self, stream_type: str, stream_id: str) -> bool:
-        """
-        Non-blocking chain verification using thread pool executor.
-        Delegates to BackgroundChainVerifier.
-        """
-        return await self.verifier.verify_stream_async(stream_type, stream_id)
+    async def get_events(self, limit: int = 100) -> List[Dict]:
+        dek, hmac_key = self.kms.get_keys()
+        await self._ensure_schema()
+        
+        results = []
+        async with aiosqlite.connect(self.db_path) as db:
+            # SELECT matching the Rev 2 Schema
+            query = "SELECT event_id, stream_type, payload, enc_nonce, event_hmac, timestamp FROM domain_events WHERE quarantine=0 ORDER BY timestamp DESC LIMIT ?"
+            async with db.execute(query, (limit,)) as cur:
+                async for row in cur:
+                    eid, stype, payload, nonce, ehmac, ts = row
+                    try:
+                        if nonce:
+                            # Decrypt + Verify Chain
+                            plain = EncryptionService.decrypt_event(dek, hmac_key, payload, nonce, ehmac)
+                            data = orjson.loads(plain)
+                            results.append({"id": eid, "type": stype, "payload": data})
+                        else:
+                            # Legacy (Rule #13)
+                            results.append({"id": eid, "type": stype, "payload": orjson.loads(payload), "_legacy": True})
+                    except TamperDetectedError as e:
+                        logger.critical(f"QUARANTINE EVENT {eid}: {e}")
+                        # In real app: UPDATE domain_events SET quarantine=1...
+                        continue
+        return results

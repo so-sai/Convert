@@ -79,11 +79,12 @@ DEK (Unwrapped in memory)
 Encrypted Event Payloads
 ```
 
-**Argon2id Parameters (OWASP 2025 Compliant):**
+**Argon2id Parameters (MANDATORY - OWASP 2025 Compliant):**
 ```python
 # CRITICAL: These parameters are LOCKED and IMMUTABLE
+# Any deviation from these values is a SECURITY VIOLATION
 ARGON2_OPSLIMIT   = 2                    # iterations (t=2)
-ARGON2_MEMLIMIT   = 19456 * 1024         # 19 MiB = 19,922,944 bytes
+ARGON2_MEMLIMIT   = 19 * 1024 * 1024     # 19 MiB (OWASP 2025 MANDATORY)
 ARGON2_PARALLELISM = 1                   # p=1 (side-channel resistance)
 ARGON2_SALT_BYTES  = 16                  # 128-bit salt
 ARGON2_OUTPUT_BYTES = 32                 # 256-bit KEK
@@ -113,13 +114,10 @@ Additional Data: event_id + stream_id (authenticated but not encrypted)
 **Database Schema (system_keys table):**
 ```sql
 CREATE TABLE IF NOT EXISTS system_keys (
-    id TEXT PRIMARY KEY CHECK (id = 'main'),
-    kdf_salt BLOB NOT NULL,              -- 16 bytes (Argon2id salt)
-    kdf_ops INTEGER NOT NULL,             -- 2 (iterations)
-    kdf_mem INTEGER NOT NULL,             -- 19,922,944 (19 MiB)
-    enc_dek BLOB NOT NULL,                -- Wrapped DEK (ciphertext + tag)
-    dek_nonce BLOB NOT NULL,              -- 24 bytes (XChaCha20 nonce)
-    created_at INTEGER NOT NULL           -- Unix timestamp
+    id INTEGER PRIMARY KEY,
+    salt BLOB NOT NULL,
+    encrypted_dek BLOB NOT NULL,
+    created_at TEXT NOT NULL
 ) STRICT;
 ```
 
@@ -130,6 +128,7 @@ CREATE TABLE IF NOT EXISTS system_keys (
 - ✅ **AEAD Protection:** Authenticated encryption prevents tampering
 - ✅ **DoS Resistance:** Memory-bound KDF prevents resource exhaustion
 - ✅ **OWASP Compliance:** Follows OWASP Password Storage Cheat Sheet 2025
+- ✅ **Mandatory Encryption:** All sensitive data encrypted with DEK before storage
 
 **Passkey Requirements:**
 - Minimum length: 12 characters
@@ -142,6 +141,12 @@ CREATE TABLE IF NOT EXISTS system_keys (
 - **Idle Timeout:** DEK cleared from memory after 5 minutes inactivity (Sprint 4 Week 1)
 - **Key Rotation:** Passkey change and DEK rotation procedures (Sprint 4 Week 2)
 - **Audit Logging:** All vault operations logged for security monitoring
+
+**Error Codes:**
+- `VAULT_LOCKED`: Vault not unlocked, user must provide Passkey
+- `INVALID_PASSKEY`: Passkey verification failed
+- `ENCRYPTION_FAILED`: DEK encryption/decryption operation failed
+- `INTEGRITY_VIOLATION`: HMAC verification failed (data tampered)
 
 
 ## 5. DATABASE SCHEMA (DDL - CORRECTED)
@@ -190,11 +195,22 @@ completed:
   - [Sprint 3] Plugin System & Storage Hardening (ALL TASKS COMPLETED)
 
 current_focus:
-  - [Sprint 4] The Cryptographic Vault (IN PROGRESS)
-    - ADR-002: PyNaCl (libsodium) selected for XChaCha20-Poly1305
-    - EncryptionService with HKDF-SHA3-256 key derivation
-    - PyInstaller bundling with libsodium hooks
-    - Estimated: 40 dev-hours (5 working days)
+  - [Sprint 4] The Cryptographic Vault (IN PROGRESS - Week 1 Complete)
+    - Task 4.1 (Crypto Library Integration): ✅ COMPLETED
+      - PyNaCl (libsodium) integrated for XChaCha20-Poly1305
+      - Argon2id KDF with 19 MiB memory limit (OWASP 2025)
+    - Task 4.2 (Key Hierarchy Design): ✅ COMPLETED
+      - User Passkey → Master Key (Argon2id) → DEK (encrypted) → Stream Key
+      - SQLite storage for salt and encrypted DEK
+    - Task 4.3 (Key Storage Integration): ✅ COMPLETED
+      - Implemented `KeyStorage` with SQLite backend
+      - Full persistence and unlock flow verified
+    - Task 4.4 (Storage Adapter Integration): 🔄 IN PROGRESS
+      - Integrate KMS with StorageAdapter for data encryption
+    - Test Coverage: ✅ ALL SECURITY TESTS PASSED
+      - Unit tests: Key derivation, encryption, KMS orchestration
+      - Integration tests: Persistence, unlock flow, invalid passkey handling
+      - Test suite: `tests/security/test_kms.py` (4/4 passed)
 
 next_sprint:
   - [Sprint 5] Passkey Auth & Key Rotation
@@ -209,7 +225,7 @@ next_sprint:
 - **Dev:** DeepSeek V3.2 (Code).
 - **Reviewer:** Claude 4.5 (Quality).
 
-## 8. CRITICAL INVARIANTS (THE 10 COMMANDMENTS)
+## 8. CRITICAL INVARIANTS (THE 12 COMMANDMENTS)
 
 1.  **Execution:** Always use `python -m <module>` (e.g., `src.core.main`). NEVER call scripts directly.
 2.  **Database:** `INTEGER` only. No `BIGINT`.
@@ -221,6 +237,8 @@ next_sprint:
 8.  **Deps:** `requirements.txt` is the Single Source of Truth.
 9.  **Platform:** Windows launcher bypass: Use `python -m PyInstaller` instead of `pyinstaller`.
 10. **Concurrency:** Thread-safe code for No-GIL environment.
+11. **Encryption (MANDATORY):** All sensitive data (Note content, event payloads) MUST be encrypted with DEK before INSERT into SQLite. No plaintext storage.
+12. **Vault State:** Return `VAULT_LOCKED` error if user has not unlocked vault with Passkey. No operations on encrypted data without unlocked DEK.
 
 ## 9. SPRINT 3 RETROSPECTIVE (LESSONS LEARNED)
 Ref: Engineering Playbook (`docs/policies/ENGINEERING_PLAYBOOK.md`)

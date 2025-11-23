@@ -1,59 +1,47 @@
+# ------------------------------------------------------------------------------
+# PROJECT CONVERT (C) 2025
+# Licensed under PolyForm Noncommercial 1.0.
+# ------------------------------------------------------------------------------
+
 import logging
-import sqlite3
-import sys
-import asyncio
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from pathlib import Path
+from .security.kms import KMS
+from .storage.adapter import StorageAdapter
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger("CORE")
+logging.basicConfig(level=logging.INFO)
+app = FastAPI()
+DB_PATH = Path("data/mds.db")
+kms = KMS(DB_PATH)
+adapter = StorageAdapter(DB_PATH, kms)
 
-def verify_sqlite_version() -> None:
-    """
-    Verify SQLite meets minimum security requirements.
-    
-    SECURITY POLICY (Sprint 3):
-    - Log warning if SQLite < 3.50.2 (CVE-2025-6965)
-    - Allow startup (assumes secure deployment environment)
-    
-    PRODUCTION POLICY (Sprint 4+):
-    - Consider hard failure via MDS_STRICT_SECURITY=true env var
-    - Rationale: Local-first app reduces SQLite attack surface
-    """
-    min_version = (3, 50, 2)
+class UnlockRequest(BaseModel):
+    passkey: str
+
+class EventRequest(BaseModel):
+    type: str
+    id: str
+    payload: dict
+
+@app.post("/vault/init")
+async def init(req: UnlockRequest):
+    await kms.initialize_vault(req.passkey)
+    return {"status": "ok"}
+
+@app.post("/vault/unlock")
+async def unlock(req: UnlockRequest):
+    if await kms.unlock_vault(req.passkey): return {"status": "unlocked"}
+    raise HTTPException(401)
+
+@app.post("/events")
+async def save(req: EventRequest):
     try:
-        current_version = tuple(map(int, sqlite3.sqlite_version.split('.')))
-    except ValueError:
-        logger.warning(f"Could not parse SQLite version: {sqlite3.sqlite_version}")
-        return
+        eid = await adapter.save_event(req.type, req.id, req.payload)
+        return {"id": eid}
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
-    if current_version < min_version:
-        logger.critical(
-            f"VULNERABILITY WARNING: SQLite version {sqlite3.sqlite_version} < 3.50.2 "
-            f"(CVE-2025-6965) - Upgrade immediately!"
-        )
-    else:
-        logger.info(f"SQLite version verified: {sqlite3.sqlite_version}")
-
-import argparse
-
-async def main():
-    parser = argparse.ArgumentParser(description="MDS Core System")
-    parser.add_argument("--health-check", action="store_true", help="Run health check and exit")
-    parser.add_argument("--test-assets", action="store_true", help="Test asset loading")
-    args = parser.parse_args()
-
-    verify_sqlite_version()
-    
-    if args.health_check:
-        print(f"System Healthy. Frozen={getattr(sys, 'frozen', False)}")
-        sys.exit(0)
-
-    logger.info("Core System Booting...")
-    # In a real run, we would initialize StorageAdapter here
-    
-if __name__ == "__main__":
-    asyncio.run(main())
+@app.get("/events")
+async def get():
+    return await adapter.get_events()

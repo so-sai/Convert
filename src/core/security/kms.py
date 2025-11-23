@@ -1,60 +1,60 @@
-from typing import Optional
-from src.core.security.key_derivation import KeyDerivation
-from src.core.security.encryption import EncryptionService
-import nacl.utils
+# ------------------------------------------------------------------------------
+# PROJECT CONVERT (C) 2025
+# Licensed under PolyForm Noncommercial 1.0.
+# ------------------------------------------------------------------------------
 
-from typing import Optional
-from src.core.security.key_derivation import KeyDerivation
-from src.core.security.encryption import EncryptionService
-from src.core.security.storage import KeyStorage
+import nacl.pwhash
 import nacl.utils
+import logging
+from typing import Optional, Tuple
+from pathlib import Path
+from .storage import KeyStorage
+from .encryption import EncryptionService
+
+logger = logging.getLogger(__name__)
 
 class KMS:
-    def __init__(self, db_path: str, provider: str = "pynacl"):
+    def __init__(self, db_path: Path):
         self.db_path = db_path
-        self.provider = provider
-        self.storage = KeyStorage(db_path)
-        self.master_key: Optional[bytes] = None
+        self._epoch_secret: Optional[bytes] = None
+        self._storage = KeyStorage(db_path)
+        # OWASP 2025 Standard
+        self.OPS = 2
+        self.MEM = 19 * 1024 * 1024 # 19 MiB
+        self.KEY_SIZE = 32
 
     async def initialize_vault(self, passkey: str) -> None:
-        salt = nacl.utils.random(16)
-        self.master_key = KeyDerivation.derive_master_key(passkey, salt)
-        if not self.master_key:
-            raise RuntimeError("Failed to derive Master Key")
-            
-        # Generate and encrypt DEK
-        dek = nacl.utils.random(32)
-        encrypted_dek = EncryptionService.wrap_dek(self.master_key, dek)
+        await self._storage.ensure_table_exists()
+        if await self._storage.load_keys(): raise RuntimeError("Vault already initialized")
+
+        salt = nacl.utils.random(nacl.pwhash.SALTBYTES)
+        # Derive KEK from Passkey
+        kek = nacl.pwhash.argon2id.kdf(self.KEY_SIZE, passkey.encode(), salt, opslimit=self.OPS, memlimit=self.MEM)
         
-        # Store in DB
-        self.storage.write(salt, encrypted_dek)
+        # Generate Epoch Secret (Root of Trust for DEK & HMAC)
+        epoch_secret = nacl.utils.random(self.KEY_SIZE)
+        
+        # Wrap Epoch Secret
+        enc_blob = EncryptionService.wrap_dek(kek, epoch_secret)
+        
+        # Save (Store blob in enc_dek, empty nonce as it's inside blob now)
+        await self._storage.save_keys(salt, enc_blob, b'', self.OPS, self.MEM)
+        self._epoch_secret = epoch_secret
 
-    async def unlock_vault(self, passkey: str) -> None:
+    async def unlock_vault(self, passkey: str) -> bool:
+        await self._storage.ensure_table_exists()
+        row = await self._storage.load_keys()
+        if not row: return False
+        salt, enc_blob, _, ops, mem = row
+        
         try:
-            salt, encrypted_dek = self.storage.read()
-        except ValueError as e:
-            raise RuntimeError(f"Vault not initialized: {e}")
-            
-        self.master_key = KeyDerivation.derive_master_key(passkey, salt)
-        if not self.master_key:
-            raise RuntimeError("Failed to derive Master Key")
-            
-        # Verify DEK can be decrypted (integrity check)
-        try:
-            EncryptionService.unwrap_dek(self.master_key, encrypted_dek)
+            kek = nacl.pwhash.argon2id.kdf(self.KEY_SIZE, passkey.encode(), salt, opslimit=ops, memlimit=mem)
+            self._epoch_secret = EncryptionService.unwrap_dek(kek, enc_blob)
+            return True
         except Exception:
-            self.master_key = None
-            raise ValueError("Invalid passkey or corrupted vault")
+            return False
 
-    def encrypt_dek(self, dek: bytes) -> bytes:
-        if not self.master_key:
-            raise RuntimeError("KMS not initialized")
-        return EncryptionService.wrap_dek(self.master_key, dek)
-
-    def decrypt_dek(self, wrapped_dek: bytes) -> bytes:
-        if not self.master_key:
-            raise RuntimeError("KMS not initialized")
-        return EncryptionService.unwrap_dek(self.master_key, wrapped_dek)
-    
-    async def close(self):
-        self.master_key = None
+    def get_keys(self) -> Tuple[bytes, bytes]:
+        """Returns (DEK, HMAC_KEY)"""
+        if not self._epoch_secret: raise Exception("Vault Locked")
+        return EncryptionService.derive_keys(self._epoch_secret)

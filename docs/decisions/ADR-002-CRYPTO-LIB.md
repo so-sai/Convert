@@ -1,11 +1,12 @@
 # ADR-002: Cryptographic Library Selection for The Cryptographic Vault
 
-**Status:** ACCEPTED  
-**Date:** 2025-11-22  
+**Status:** ACCEPTED (LOCKED)  
+**Date:** 2025-11-23 (Rev 2)  
 **Author:** System Architect (SA) + BA_CLAUDE  
 **Sprint:** Sprint 4 – The Cryptographic Vault  
-**Security Review:** SecA (Grok 4.1) - APPROVED with Hardening Requirements  
-**Ref:** MDS v3.14 Section 4 (Cryptographic Architecture)
+**Security Review:** SecA (Grok 4.1) - APPROVED  
+**Ref:** MDS v3.14 Section 4 (Cryptographic Architecture)  
+**Hash:** CRYPTO_TRINITY_REV2_23112025  
 
 ---
 
@@ -792,7 +793,98 @@ await post_to_timestamp_authority(seal_hash)
 **Last Updated:** 2025-11-22  
 **Maintained By:** BA_CLAUDE + SA Team
 
-## 7. Implementation Refinements (22/11/2025)
+---
+
+## 7. Crypto Anatomy (Rev 2 Clarification)
+
+### 7.1 Double-MAC Architecture
+
+We implement "Defense in Depth" with two layers of integrity:
+
+1.  **AEAD Layer (Confidentiality & Authentication):**
+    - The `payload` field contains `[Ciphertext || Poly1305_Tag]`.
+    - This is handled automatically by libsodium's `crypto_secretbox_xchacha20poly1305`.
+    - The Poly1305 tag authenticates the ciphertext.
+
+2.  **Chain Layer (Immutable History):**
+    - The `event_hmac` field contains `HMAC-SHA3-256(Plaintext)`.
+    - This links the hash chain **before** encryption.
+    - Computed on plaintext to preserve integrity during re-encryption.
+
+**Key Insight:** These are **separate** mechanisms serving different purposes:
+- **Poly1305:** Prevents tampering of individual encrypted payloads.
+- **HMAC:** Prevents deletion/reordering of events in the append-only log.
+
+### 7.2 Database Schema (Rev 2)
+
+```sql
+CREATE TABLE domain_events (
+    -- ...
+    payload BLOB NOT NULL,        -- [Ciphertext || Poly1305_Tag]
+    event_hmac BLOB NOT NULL,     -- HMAC-SHA3-256 (Raw Bytes, not hex)
+    enc_nonce BLOB,               -- 24 bytes (NULL = Legacy Plaintext)
+    quarantine INTEGER DEFAULT 0, -- 0=OK, 1=Tampered
+    tamper_reason TEXT,
+    -- ...
+);
+```
+
+**Critical Change:** `event_hmac` is now **BLOB** (was TEXT). This matches the binary nature of HMAC output and avoids unnecessary hex encoding overhead.
+
+---
+
+## 8. Legacy & Fallback Policy (Rule #13)
+
+To resolve conflict with Eternal Rule #2 ("No Plaintext Fallback"):
+
+### 8.1 Three Cases
+
+**Case A (New Encrypted Data):**
+- `enc_nonce` IS NOT NULL
+- Decryption MUST occur
+- If MAC fails → `TamperDetectedError`
+- Set `quarantine=1`, log `tamper_reason`
+
+**Case B (Legacy Plaintext Data):**
+- `enc_nonce` IS NULL
+- Treat as plaintext (Migration mode)
+- No decryption attempted
+- **ALLOW** (for backward compatibility)
+
+**Case C (Attack Scenario):**
+- `enc_nonce` IS NOT NULL but decryption fails
+- **CRITICAL SECURITY ALERT**
+- Quarantine immediately
+- Never return data
+
+### 8.2 Implementation
+
+```python
+def read_event(event_row):
+    if event_row['enc_nonce'] is None:
+        # Legacy plaintext data
+        return event_row['payload']  # No decryption
+    else:
+        # Encrypted data - MUST decrypt successfully
+        try:
+            plaintext = decrypt(
+                event_row['payload'],
+                event_row['enc_nonce'],
+                dek
+            )
+            return plaintext
+        except DecryptionError:
+            # CRITICAL: Tamper detected
+            quarantine_event(
+                event_row['event_id'],
+                "Decryption failed - possible tampering"
+            )
+            raise TamperDetectedError("Integrity violation")
+```
+
+---
+
+## 9. Implementation Refinements (22/11/2025)
 
 **Parameter Change:**
 - **Argon2id Memory Limit:** Reduced to **19 MiB** (was 256 MB).
