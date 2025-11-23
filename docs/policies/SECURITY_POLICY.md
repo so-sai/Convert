@@ -65,6 +65,10 @@ To prevent brute-force attacks:
 - ✅ Clear error messages guide users to create strong passphrases
 - ✅ No passkey stored in plaintext anywhere in the system
 
+### 2.5 Storage Policy
+- **Never store Passkey:** The user's passkey MUST NEVER be stored on disk, database, or logs.
+- **Allowed Storage:** Only the **Salt** (16 bytes) and **Encrypted DEK** (Wrapped with Master Key) are allowed to be persisted.
+
 ## 3. Cryptographic Standards
 
 ### 3.1 Key Derivation Function (KDF)
@@ -157,9 +161,12 @@ Encrypted Event Payloads
 - ❌ Plaintext KEK
 - ❌ Plaintext DEK
 
-### 4.3 Memory Hygiene
+### 4.3 Zeroization Policy
 
-**Best-Effort Zeroization:**
+**Requirement:**
+Sensitive keys (Master Key, DEK) **MUST** be cleared from memory via `gc.collect()` or explicit overwriting when the Vault is closed.
+
+**Implementation:**
 ```python
 def secure_wipe(data):
     """Best-effort memory wiping (Python GC limitations)"""
@@ -167,6 +174,8 @@ def secure_wipe(data):
         for i in range(len(data)):
             data[i] = 0
     del data
+    import gc
+    gc.collect() # Force collection
 ```
 
 **Sensitive Data Lifecycle:**
