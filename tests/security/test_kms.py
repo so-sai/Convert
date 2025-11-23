@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 import gc
+import nacl.utils
 from src.core.security.kms import KMS
 from src.core.security.key_derivation import KeyDerivation
 from src.core.security.encryption import EncryptionService
@@ -35,8 +36,33 @@ def test_encryption_roundtrip():
 
 @pytest.mark.asyncio
 async def test_kms_full_flow(temp_db_path):
+    # 1. Initialize
     kms = KMS(temp_db_path)
     await kms.initialize_vault("secret")
     assert kms.master_key is not None
-    assert len(kms.master_key) == 32
+    
+    # Encrypt something to verify DEK works
+    dek = nacl.utils.random(32)
+    encrypted_dek = kms.encrypt_dek(dek)
     await kms.close()
+    
+    # 2. Re-open (Persistence Check)
+    kms2 = KMS(temp_db_path)
+    await kms2.unlock_vault("secret")
+    assert kms2.master_key is not None
+    
+    # Decrypt to verify same key
+    decrypted_dek = kms2.decrypt_dek(encrypted_dek)
+    assert decrypted_dek == dek
+    await kms2.close()
+
+@pytest.mark.asyncio
+async def test_kms_invalid_passkey(temp_db_path):
+    kms = KMS(temp_db_path)
+    await kms.initialize_vault("secret")
+    await kms.close()
+    
+    kms2 = KMS(temp_db_path)
+    with pytest.raises(ValueError, match="Invalid passkey"):
+        await kms2.unlock_vault("wrong_password")
+    await kms2.close()

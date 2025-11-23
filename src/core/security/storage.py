@@ -26,7 +26,9 @@ class KeyStorage:
     def _init_db(self):
         """Create system_keys table if it doesn't exist."""
         # Ensure parent directory exists
-        Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
+        db_path_obj = Path(self.db_path)
+        if db_path_obj.parent.name: # Only create parent if it's not empty/current dir
+            db_path_obj.parent.mkdir(parents=True, exist_ok=True)
         
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
@@ -49,8 +51,6 @@ class KeyStorage:
         """
         with sqlite3.connect(self.db_path) as conn:
             # We only support one key for now (Single DEK architecture)
-            # Clear existing keys to enforce single source of truth if re-initializing
-            # In a real rotation scenario, we might keep old keys, but spec says "Single DEK".
             conn.execute("DELETE FROM system_keys")
             
             conn.execute(

@@ -1,6 +1,6 @@
 # 📘 MDS v3.14 - THE ETERNAL PYTHON CORE (GRAND UNIFIED)
 
-> **Status:** SPRINT 3 COMPLETED
+> **Status:** SPRINT 4 ACTIVE
 > **Engine:** Python 3.14.0 (Free-Threading `cp314t`)
 > **Philosophy:** "Infinite like Pi, Fast like Python, Secure like Rust."
 > **Base:** Merged from v3.1-ETERNAL & v4.0-SECURE
@@ -28,6 +28,9 @@ backend:
     - "uvicorn==0.38.0"      # Py3.14 compatible
     - "orjson==3.11.4"       # Pre-compiled binary wheel
     - "aiosqlite==0.21.0"    # Async SQLite
+    - "cffi>=2.0.0"          # Required for PyNaCl thread safety
+    - "pynacl>=1.5.0"        # XChaCha20-Poly1305 (libsodium)
+    - "pycryptodome>=3.17.0" # Fallback crypto provider
   execution_mode: "python -X gil=0 -m src.core.main"
   database_schema: "SQLite STRICT (INTEGER only, No BIGINT)"
 
@@ -37,9 +40,11 @@ frontend:
   rendering: "WebGPU"
 
 cryptography:
+  library: "PyNaCl (libsodium) - Ref: ADR-002"
   key_exchange: "X25519 (Curve25519) - No NIST curves"
-  encryption: "XChaCha20-Poly1305 (Sprint 4)"
+  encryption: "XChaCha20-Poly1305 (192-bit nonce)"
   integrity: "HMAC-SHA3-256 (Always ON)"
+  key_derivation: "HKDF-SHA3-256 (per-stream keys)"
 ```
 
 ## 3. ARCHITECTURE OVERVIEW
@@ -50,9 +55,94 @@ cryptography:
 
 ## 4. CRYPTOGRAPHIC ARCHITECTURE (THE IRON CORE)
 
+### 4.1 Security Principles
 - **Integrity Chain:** prev_event_hash connects all events.
 - **HMAC Protection:** Calculated on payload bytes. Verified on read.
-- **Passkey Integration (Sprint 4):** Master Key derived from WebAuthn PRF.
+- **Passkey Integration (Sprint 4):** Master Key derived via Argon2id KDF.
+
+### 4.2 The Eternal Vault Architecture (Sprint 4 - APPROVED)
+
+**Status:** APPROVED_FOR_MERGE (Hash: SPRINT4-REV5.1-FINAL)  
+**Approval Date:** 2025-11-23  
+**Security Audit:** SECA_GROK_4.1 + Supreme Judicial Review
+
+**Key Hierarchy:**
+```
+User Passkey (>=12 chars)
+    ↓ Argon2id KDF (OWASP 2025)
+KEK (Key Encryption Key, 256-bit)
+    ↓ XChaCha20-Poly1305 AEAD
+Wrapped DEK (Data Encryption Key, 256-bit)
+    ↓ Stored in SQLite (system_keys table)
+DEK (Unwrapped in memory)
+    ↓ XChaCha20-Poly1305 AEAD
+Encrypted Event Payloads
+```
+
+**Argon2id Parameters (OWASP 2025 Compliant):**
+```python
+# CRITICAL: These parameters are LOCKED and IMMUTABLE
+ARGON2_OPSLIMIT   = 2                    # iterations (t=2)
+ARGON2_MEMLIMIT   = 19456 * 1024         # 19 MiB = 19,922,944 bytes
+ARGON2_PARALLELISM = 1                   # p=1 (side-channel resistance)
+ARGON2_SALT_BYTES  = 16                  # 128-bit salt
+ARGON2_OUTPUT_BYTES = 32                 # 256-bit KEK
+```
+
+**Rationale:**
+- **Memory (19 MiB):** Prevents DoS attacks (~50 concurrent auth on 1GB RAM)
+- **Iterations (t=2):** Balances security and UX (<1 second unlock time)
+- **Parallelism (p=1):** Maximizes side-channel attack resistance
+- **Performance:** 0.5-1.0s unlock time on desktop, <1s on mobile
+
+**Encryption Primitives:**
+```python
+# KEK Wrapping (Passkey → KEK → Wrapped DEK)
+Algorithm: XChaCha20-Poly1305 AEAD
+Nonce: 24 bytes (192-bit, random per operation)
+Key: 32 bytes (256-bit KEK from Argon2id)
+Output: Ciphertext + 16-byte authentication tag
+
+# Data Encryption (DEK → Encrypted Payload)
+Algorithm: XChaCha20-Poly1305 AEAD
+Nonce: 24 bytes (192-bit, random per event)
+Key: 32 bytes (256-bit DEK)
+Additional Data: event_id + stream_id (authenticated but not encrypted)
+```
+
+**Database Schema (system_keys table):**
+```sql
+CREATE TABLE IF NOT EXISTS system_keys (
+    id TEXT PRIMARY KEY CHECK (id = 'main'),
+    kdf_salt BLOB NOT NULL,              -- 16 bytes (Argon2id salt)
+    kdf_ops INTEGER NOT NULL,             -- 2 (iterations)
+    kdf_mem INTEGER NOT NULL,             -- 19,922,944 (19 MiB)
+    enc_dek BLOB NOT NULL,                -- Wrapped DEK (ciphertext + tag)
+    dek_nonce BLOB NOT NULL,              -- 24 bytes (XChaCha20 nonce)
+    created_at INTEGER NOT NULL           -- Unix timestamp
+) STRICT;
+```
+
+**Security Guarantees:**
+- ✅ **Local-First:** No cloud dependencies, all keys stored locally
+- ✅ **Data Sovereignty:** User controls passkey, vault cannot be accessed without it
+- ✅ **Forward Secrecy:** DEK rotation supported (future Sprint 5)
+- ✅ **AEAD Protection:** Authenticated encryption prevents tampering
+- ✅ **DoS Resistance:** Memory-bound KDF prevents resource exhaustion
+- ✅ **OWASP Compliance:** Follows OWASP Password Storage Cheat Sheet 2025
+
+**Passkey Requirements:**
+- Minimum length: 12 characters
+- Strength validation: Basic complexity check (Phase 1)
+- Future enhancement: zxcvbn integration (Sprint 4 Week 1)
+- Rate limiting: 3 failed attempts per 5 minutes (Sprint 5)
+
+**Operational Security:**
+- **Memory Hygiene:** Best-effort zeroization of sensitive keys
+- **Idle Timeout:** DEK cleared from memory after 5 minutes inactivity (Sprint 4 Week 1)
+- **Key Rotation:** Passkey change and DEK rotation procedures (Sprint 4 Week 2)
+- **Audit Logging:** All vault operations logged for security monitoring
+
 
 ## 5. DATABASE SCHEMA (DDL - CORRECTED)
 
@@ -100,10 +190,15 @@ completed:
   - [Sprint 3] Plugin System & Storage Hardening (ALL TASKS COMPLETED)
 
 current_focus:
-  - [Sprint 4] Passkey Auth & Real Encryption (XChaCha20).
+  - [Sprint 4] The Cryptographic Vault (IN PROGRESS)
+    - ADR-002: PyNaCl (libsodium) selected for XChaCha20-Poly1305
+    - EncryptionService with HKDF-SHA3-256 key derivation
+    - PyInstaller bundling with libsodium hooks
+    - Estimated: 40 dev-hours (5 working days)
 
 next_sprint:
-  - [Sprint 5] WASM Sandbox & P2P Sync.
+  - [Sprint 5] Passkey Auth & Key Rotation
+  - [Sprint 6] WASM Sandbox & P2P Sync
 ```
 
 ## 7. TEAM STRUCTURE & ROLES

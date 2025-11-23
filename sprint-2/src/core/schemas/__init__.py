@@ -1,1 +1,0 @@
-"""Event Schemas for MDS v3.1"""

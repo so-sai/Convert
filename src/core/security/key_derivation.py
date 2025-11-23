@@ -4,7 +4,7 @@ from typing import Tuple, Union
 
 class KeyDerivation:
     OPS_LIMIT = nacl.pwhash.argon2id.OPSLIMIT_INTERACTIVE
-    MEM_LIMIT = nacl.pwhash.argon2id.MEMLIMIT_INTERACTIVE
+    MEM_LIMIT = 19 * 1024 * 1024  # 19 MiB (OWASP 2025 Compliant)
     KEY_SIZE = 32
 
     @staticmethod
