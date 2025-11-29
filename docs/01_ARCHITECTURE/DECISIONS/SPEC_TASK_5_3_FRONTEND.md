@@ -1,55 +1,48 @@
-# SPEC-005: FRONTEND INTEGRATION (BACKUP & RESTORE)
+# SPECIFICATION: FRONTEND BACKUP INTEGRATION (TASK 5.3)
+**Status:** READY FOR CODING
+**Bridge Layer:** Python Pydantic <-> Tauri JSON
 
-**Parent Task:** Task 5.3 - Resilience UI
-**Status:** READY FOR DEV
-**Ref:** MDS v3.14, ADR-003
+## 1. DATA CONTRACTS (STRICT SCHEMA)
+Frontend expects this exact JSON structure from `backup_get_status()`:
+```json
+{
+  "notes_count": int,          // Total notes in DB
+  "last_backup_ts": int|null,  // Unix timestamp or null
+  "db_size_bytes": int,        // For disk space check
+  "is_safe_mode": bool,        // CRITICAL: True if Libsodium missing
+  "schema_version": 1
+}
+```
 
-## 1. USER STORIES (FROM PRODUCT OWNER)
+## 2. API COMMANDS
 
-### Story 1: Smart Toast Notification (The "Gentle Nudge")
+1.  `cmd_backup_get_status()` -> Returns JSON above.
+2.  `cmd_backup_create(passkey, path)` -> Returns `true` or throws Error.
+3.  `cmd_backup_restore(passkey, path)` -> Returns `true` or throws Error.
 
-**As a** User,
-**I want** to receive a non-intrusive notification when it's time to backup my vault,
-**So that** I can ensure my data is safe without being interrupted.
+## 3. UI/UX REQUIREMENTS
 
-- **Trigger:** Periodic poll of `get_backup_status`.
-- **UI:** Toast at bottom-right.
-    - "You've created 10+ notes. Consider backing up."
-    - [Backup Now] | [Don't ask again]
-- **Behavior:** Auto-dismiss 8s. No Modals.
+### A. The "Smart Toast" (Notification)
 
-### Story 2: Magic Restore (Drag & Drop)
+  - **Logic:** Show toast IF (`notes_count` > 10 AND `last_backup_ts` is null/old).
+  - **Safe Mode:** IF `is_safe_mode` is True -> DO NOT show toast (Silent fail).
 
-**As a** User,
-**I want** to drag a `.cvbak` file onto the application window,
-**So that** I can easily initiate the restore process without navigating complex menus.
+### B. The "Backup Dashboard" (Settings)
 
-- **Detection:** `.cvbak` extension.
-- **Feedback:** "Drop Zone" overlay appears.
-- **Action:** Triggers Restore Wizard.
+  - **State: Safe Mode Active**
+      - Banner: "⚠️ Backup disabled. Missing crypto libraries."
+      - Button: [Backup Now] (Disabled/Greyed out).
+  - **State: Normal**
+      - Button: [Backup Now] -> Opens Save Dialog.
 
-### Story 3: Progress Feedback
+### C. The "Magic Restore"
 
-**As a** User,
-**I want** to see a visual indicator during the Backup and Restore processes.
+  - **Primary:** Drag & Drop `.cvbak` file onto App.
+  - **Secondary:** Button [Restore from File...] -> Opens Native File Picker.
+  - **Flow:** File Selected -> Valid Header? -> Prompt Passkey -> Show Progress Modal.
 
-- **Backup:** Spinner during "Exporting..." (2-3s). Success checkmark.
-- **Restore:** Modal steps: "Verifying..." -> "Decrypting..." -> "Restoring...".
+## 4. ERROR HANDLING MAPPING
 
------
-
-## 2. TECHNICAL BRIDGE (PYTHON <-> SVELTE)
-
-### 2.1 Backend Commands (src/core/api/routes/backup.py)
-
-Frontend will invoke these via `invoke('command_name', args)`:
-
-1.  `backup_create_snapshot(passkey: str, target_path: str) -> Result<bool>`
-2.  `backup_restore_from_file(backup_path: str, passkey: str) -> Result<bool>`
-3.  `backup_get_status() -> BackupStatus`
-
-### 2.2 Error Codes
-
-- `ERR_AUTH_FAILED`: Wrong passkey.
-- `ERR_IO_LOCKED`: File is busy (Retry logic needed).
-- `ERR_INTEGRITY`: Backup file is corrupted/tampered.
+  - Backend `BackupCryptoUnavailableError` -> UI shows "Safe Mode Warning".
+  - Backend `WinError 32` -> UI shows "File Busy - Retrying...".
+  - Backend `IntegrityError` -> UI shows "❌ File Corrupted".

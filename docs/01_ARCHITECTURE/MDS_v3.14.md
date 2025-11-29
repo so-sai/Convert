@@ -42,7 +42,7 @@ ARGON2_SALT_BYTES         = 16
 - **Sprint 5 (Resilience):**
   - ✅ **Task 5.1: Recovery Phrase (BIP39):** DONE.
   - ✅ **Task 5.2: Secure Backup (Atomic Vacuum):** DONE.
-  - 🔄 **Task 5.3: Frontend Integration:** IN PROGRESS.
+  - 🔄 **Task 5.3: Frontend Integration:** IN PROGRESS (Spec Finalized).
 
 ## 6. PHYSICAL DIRECTORY STRUCTURE (CONFIRMED)
 
