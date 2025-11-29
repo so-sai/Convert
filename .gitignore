@@ -1,33 +1,34 @@
-# Python
+# --- Python ---
 __pycache__/
 *.pyc
-.env
+*.pyo
+*.pyd
+.Python
+env/
 venv/
+.venv/
+pip-wheel-metadata/
+.eggs/
+*.egg-info/
+pip-selfcheck.json
 
-# Node
-node_modules/
+# --- Build Artifacts ---
 dist/
-.npm
+build/
+*.egg
 
-# Tauri
-src-tauri/target/
-src-tauri/Cargo.lock
-
-# IDE
+# --- IDE & Editor ---
 .vscode/
 .idea/
-build/
-dist/
-__pycache__/
-build/
-dist/
+*.sublime-project
+*.sublime-workspace
 
-# Database
-*.db
-*.db-shm
-*.db-wal
-temp.db
+# --- Tauri / Rust (CỰC KỲ QUAN TRỌNG) ---
+/src-tauri/target/
+/src-tauri/Cargo.lock
+**/node_modules/
+/src-tauri/gen/
 
-# Backups
-*.cvbak
-backups/
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
