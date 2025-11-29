@@ -48,7 +48,12 @@ class StorageAdapter:
         self._init_done = True
 
     async def save_event(self, stream_type: str, stream_id: str, payload: Dict) -> int:
-        dek, hmac_key = self.kms.get_keys() # Check lock & get derived keys
+        # Check vault is unlocked and get master key
+        if not self.kms.is_unlocked or self.kms._master_key is None:
+            raise RuntimeError("Vault Locked: Must unlock vault before saving events")
+        
+        # Derive DEK and HMAC key from master key
+        dek, hmac_key = EncryptionService.derive_keys(self.kms._master_key)
         await self._ensure_schema()
         
         json_bytes = orjson.dumps(payload)
@@ -67,7 +72,12 @@ class StorageAdapter:
             return cur.lastrowid
 
     async def get_events(self, limit: int = 100) -> List[Dict]:
-        dek, hmac_key = self.kms.get_keys()
+        # Check vault is unlocked and get master key
+        if not self.kms.is_unlocked or self.kms._master_key is None:
+            raise RuntimeError("Vault Locked: Must unlock vault before reading events")
+        
+        # Derive DEK and HMAC key from master key
+        dek, hmac_key = EncryptionService.derive_keys(self.kms._master_key)
         await self._ensure_schema()
         
         results = []

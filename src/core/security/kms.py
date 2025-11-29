@@ -1,60 +1,113 @@
-# ------------------------------------------------------------------------------
-# PROJECT CONVERT (C) 2025
-# Licensed under PolyForm Noncommercial 1.0.
-# ------------------------------------------------------------------------------
-
-import nacl.pwhash
-import nacl.utils
-import logging
-from typing import Optional, Tuple
+"""
+Key Management System (KMS) - Omega Standard
+Status: FIXED (Synchronous API + Correct NaCl Constants)
+"""
+import os
+import json
+from typing import Optional
 from pathlib import Path
-from .storage import KeyStorage
-from .encryption import EncryptionService
+from dataclasses import dataclass, asdict
 
-logger = logging.getLogger(__name__)
+try:
+    from nacl.secret import SecretBox
+    from nacl.utils import random
+    from nacl.pwhash import argon2id
+    HAS_CRYPTO = True
+except ImportError:
+    HAS_CRYPTO = False
+
+@dataclass
+class KeyStore:
+    salt: str
+    nonce: str
+    ciphertext: str
+    algo: str = "xchacha20-poly1305"
+    kdf: str = "argon2id"
 
 class KMS:
-    def __init__(self, db_path: Path):
-        self.db_path = db_path
-        self._epoch_secret: Optional[bytes] = None
-        self._storage = KeyStorage(db_path)
-        # OWASP 2025 Standard
-        self.OPS = 2
-        self.MEM = 19 * 1024 * 1024 # 19 MiB
-        self.KEY_SIZE = 32
+    def __init__(self, storage_path: str = "security/keys.json"):
+        if not os.path.isabs(storage_path):
+            base = Path.cwd()
+            # Xử lý path khi chạy test
+            if base.name in ['tests', 'security', 'unit']: 
+                base = base.parent if base.name != 'tests' else base.parent
+            self.storage_path = base / storage_path
+        else:
+            self.storage_path = Path(storage_path)
+            
+        self._master_key: Optional[bytes] = None
+        self._is_unlocked: bool = False
 
-    async def initialize_vault(self, passkey: str) -> None:
-        await self._storage.ensure_table_exists()
-        if await self._storage.load_keys(): raise RuntimeError("Vault already initialized")
+    @property
+    def is_unlocked(self) -> bool:
+        return self._is_unlocked
 
-        salt = nacl.utils.random(nacl.pwhash.SALTBYTES)
-        # Derive KEK from Passkey
-        kek = nacl.pwhash.argon2id.kdf(self.KEY_SIZE, passkey.encode(), salt, opslimit=self.OPS, memlimit=self.MEM)
-        
-        # Generate Epoch Secret (Root of Trust for DEK & HMAC)
-        epoch_secret = nacl.utils.random(self.KEY_SIZE)
-        
-        # Wrap Epoch Secret
-        enc_blob = EncryptionService.wrap_dek(kek, epoch_secret)
-        
-        # Save (Store blob in enc_dek, empty nonce as it's inside blob now)
-        await self._storage.save_keys(salt, enc_blob, b'', self.OPS, self.MEM)
-        self._epoch_secret = epoch_secret
+    @property
+    def master_key(self) -> Optional[bytes]:
+        return self._master_key
 
-    async def unlock_vault(self, passkey: str) -> bool:
-        await self._storage.ensure_table_exists()
-        row = await self._storage.load_keys()
-        if not row: return False
-        salt, enc_blob, _, ops, mem = row
+    def initialize(self, passphrase: str) -> bool:
+        if not HAS_CRYPTO: raise RuntimeError("Crypto libraries missing.")
+        if self.storage_path.exists(): raise FileExistsError("KMS already initialized.")
         
+        # FIX: Dùng argon2id.SALTBYTES thay vì nacl.pwhash.SALTBYTES
+        salt = random(argon2id.SALTBYTES)
+        master_key = random(32) 
+        
+        kdf_key = argon2id.kdf(
+            SecretBox.KEY_SIZE,
+            passphrase.encode('utf-8'),
+            salt,
+            opslimit=argon2id.OPSLIMIT_MODERATE,
+            memlimit=argon2id.MEMLIMIT_MODERATE
+        )
+        
+        box = SecretBox(kdf_key)
+        nonce = random(SecretBox.NONCE_SIZE)
+        encrypted = box.encrypt(master_key, nonce)
+        
+        ciphertext = encrypted.ciphertext if hasattr(encrypted, 'ciphertext') else encrypted[len(nonce):]
+        
+        keystore = KeyStore(
+            salt=salt.hex(),
+            nonce=nonce.hex(),
+            ciphertext=ciphertext.hex()
+        )
+        self._save_keystore(keystore)
+        return True
+
+    def unlock(self, passphrase: str) -> bool:
+        if not HAS_CRYPTO: return False
+        if not self.storage_path.exists(): return False
+            
         try:
-            kek = nacl.pwhash.argon2id.kdf(self.KEY_SIZE, passkey.encode(), salt, opslimit=ops, memlimit=mem)
-            self._epoch_secret = EncryptionService.unwrap_dek(kek, enc_blob)
+            keystore = self._load_keystore()
+            salt = bytes.fromhex(keystore.salt)
+            nonce = bytes.fromhex(keystore.nonce)
+            ciphertext = bytes.fromhex(keystore.ciphertext)
+            
+            kdf_key = argon2id.kdf(
+                SecretBox.KEY_SIZE,
+                passphrase.encode('utf-8'),
+                salt,
+                opslimit=argon2id.OPSLIMIT_MODERATE,
+                memlimit=argon2id.MEMLIMIT_MODERATE
+            )
+            
+            box = SecretBox(kdf_key)
+            self._master_key = box.decrypt(ciphertext, nonce)
+            self._is_unlocked = True
             return True
         except Exception:
+            self._is_unlocked = False
             return False
 
-    def get_keys(self) -> Tuple[bytes, bytes]:
-        """Returns (DEK, HMAC_KEY)"""
-        if not self._epoch_secret: raise Exception("Vault Locked")
-        return EncryptionService.derive_keys(self._epoch_secret)
+    def _save_keystore(self, keystore: KeyStore):
+        self.storage_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.storage_path, 'w') as f:
+            json.dump(asdict(keystore), f, indent=4)
+
+    def _load_keystore(self) -> KeyStore:
+        with open(self.storage_path, 'r') as f:
+            data = json.load(f)
+        return KeyStore(**data)

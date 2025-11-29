@@ -8,8 +8,13 @@ class StreamType(str, Enum):
     INTERACTION = "interaction" 
     MEMORY = "memory"
 
-class DomainEvent(BaseModel):
+class BaseEvent(BaseModel):
+    """Base Event Schema"""
     event_id: str
+    timestamp: int
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+class DomainEvent(BaseEvent):
     stream_type: StreamType
     stream_id: str
     event_type: str
@@ -51,4 +56,12 @@ class RecentNote(BaseModel):
     title: str
     updated_at: datetime
     excerpt: str
+    model_config = ConfigDict(extra="forbid")
+
+class MemoryPayload(BaseModel):
+    """Schema for AI Memory Bridge events"""
+    decision_id: str
+    rationale: str
+    alternatives: list[str]
+    confidence: float
     model_config = ConfigDict(extra="forbid")

@@ -21,3 +21,13 @@ dist/
 __pycache__/
 build/
 dist/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+temp.db
+
+# Backups
+*.cvbak
+backups/
