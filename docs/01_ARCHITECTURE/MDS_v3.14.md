@@ -11,7 +11,7 @@
 - **[ADR-002]** Crypto Engine: Libsodium Strategy (XChaCha20-Poly1305).
 - **[ADR-003]** Backup Crypto: Omega Standard (Argon2id 128MB/3 Ops).
 
-## 3. TECH STACK (UPDATED)
+## 3. TECH STACK (CONFIRMED)
 ```yaml
 backend:
   language: "Python 3.14 (No-GIL)"
@@ -42,7 +42,7 @@ ARGON2_SALT_BYTES         = 16
 - **Sprint 5 (Resilience):**
   - ✅ **Task 5.1: Recovery Phrase (BIP39):** DONE.
   - ✅ **Task 5.2: Secure Backup (Atomic Vacuum):** DONE.
-  - 🔄 **Task 5.3: Frontend Integration:** IN PROGRESS (User Stories Ready).
+  - 🔄 **Task 5.3: Frontend Integration:** IN PROGRESS.
 
 ## 6. PHYSICAL DIRECTORY STRUCTURE (CONFIRMED)
 
@@ -63,3 +63,4 @@ E:/DEV/Convert/
 ├── .gitignore
 └── pyproject.toml
 ```
+
