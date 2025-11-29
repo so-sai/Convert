@@ -1,0 +1,1 @@
+# SPEC-006: KEY ROTATION PROTOCOL (See ADR-006 for logic)

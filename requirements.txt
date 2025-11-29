@@ -34,3 +34,4 @@ pytest-cov>=4.1.0       # Code coverage
 # Packaging & Deployment
 # ============================================================================
 pyinstaller>=6.0.0      # Executable bundling
+structlog>=24.1.0
