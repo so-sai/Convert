@@ -20,3 +20,12 @@ Thumbs.db
 # Local configs
 .env
 *.local
+# Tauri / Rust compiler artifacts
+/src-tauri/target/
+/src-tauri/Cargo.lock
+
+# Python cache & venv
+__pycache__/
+*.pyc
+.venv/
+venv/
