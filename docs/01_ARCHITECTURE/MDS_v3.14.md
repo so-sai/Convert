@@ -10,6 +10,8 @@
 ## 2. ARCHITECTURAL DECISIONS
 - **[ADR-002]** Crypto Engine: Libsodium Strategy (XChaCha20-Poly1305).
 - **[ADR-003]** Backup Crypto: Omega Standard (Argon2id 128MB/3 Ops).
+- **[SPEC-006]** Key Rotation Protocol: Wrapper Rotation Pattern.
+- **[SPEC-007]** Secure Recovery Export: Rust-First with Blind Frontend.
 
 ## 3. TECH STACK (CONFIRMED)
 ```yaml
@@ -40,9 +42,10 @@ ARGON2_SALT_BYTES         = 16
 
 - **Sprint 4 (Security):** ✅ COMPLETED.
 - **Sprint 5 (Resilience):**
-  - ✅ **Task 5.1: Recovery Phrase (BIP39):** DONE.
-  - ✅ **Task 5.2: Secure Backup (Atomic Vacuum):** DONE.
-  - 🔄 **Task 5.3: Frontend Integration:** IN PROGRESS (Spec Finalized).
+  - ✅ **Task 5.1: Recovery Phrase (BIP39):** COMPLETED & VERIFIED (20/20 tests passing).
+  - ✅ **Task 5.2: Secure Backup (Atomic Vacuum):** COMPLETED & VERIFIED.
+  - ⏸️ **Task 5.3: Frontend Integration:** PENDING (Backend ready, frontend not started).
+  - 📋 **Task 5.4: Key Rotation Protocol:** SPEC READY (SPEC-006).
 
 ## 6. PHYSICAL DIRECTORY STRUCTURE (CONFIRMED)
 
