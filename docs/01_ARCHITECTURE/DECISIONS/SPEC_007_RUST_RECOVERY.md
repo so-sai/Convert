@@ -1,9 +1,10 @@
 # SPEC-007 v2.1: SECURE RECOVERY EXPORT (RUST-FIRST & BLIND FRONTEND)
 
-> **Status:** FINAL APPROVED  
+> **Status:** APPROVED - PENDING IMPLEMENTATION  
 > **Priority:** CRITICAL  
 > **Stack:** Rust (Core Logic) | Svelte (Blind View)  
 > **Constraint:** NO PLAINTEXT LEAK TO JS/PYTHON
+> **Dependencies:** Requires Tauri v2 + Rust backend setup (Task 5.3+)
 
 ---
 
