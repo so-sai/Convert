@@ -1,4 +1,21 @@
-# 📘 MDS v3.14 - THE IRON VAULT (CONVERGED EDITION)
+import os
+import sys
+import logging
+from pathlib import Path
+
+# --- CONFIGURATION ---
+# Đảm bảo Encoding cho Terminal Windows
+sys.stdout.reconfigure(encoding='utf-8')
+
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s - [%(levelname)s] - %(message)s',
+    datefmt='%H:%M:%S'
+)
+logger = logging.getLogger("ARCH_PRIME")
+
+# --- CONTENT: MDS v3.14 (SSOT) ---
+MDS_CONTENT = r'''# 📘 MDS v3.14 - THE IRON VAULT (CONVERGED EDITION)
 
 > **Status:** SPRINT 5 (EXECUTION PHASE)
 > **Engine:** Hybrid (Python 3.14 `cp314t` + Rust Tauri v2)
@@ -79,3 +96,42 @@ E:/DEV/Convert/
 3. **Monorepo Law:** Code nghiệp vụ Python -> `src/core`. Code bảo mật -> `src-tauri`.
 4. **Test First:** Không viết code nếu chưa có Test Plan.
 5. **Clean Room:** Dọn dẹp file rác trước khi bắt đầu module mới.
+'''
+
+def safe_update_mds():
+    """
+    Hàm cập nhật MDS an toàn, tuân thủ [The Constitution].
+    """
+    # Định nghĩa đường dẫn tương đối từ vị trí chạy script
+    # Giả định script chạy từ root project hoặc folder scripts
+    current_path = Path.cwd()
+    
+    # Tìm root (nếu đang ở trong scripts thì lùi ra 1 cấp)
+    if current_path.name == "scripts":
+        project_root = current_path.parent
+    else:
+        project_root = current_path
+        
+    target_path = project_root / "docs" / "01_ARCHITECTURE" / "MDS_v3.14.md"
+    
+    try:
+        logger.info(f"📍 Project Root detected: {project_root}")
+        
+        # 1. Đảm bảo thư mục tồn tại
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        logger.info(f"📁 Verified directory: {target_path.parent}")
+
+        # 2. Ghi file an toàn
+        with open(target_path, "w", encoding="utf-8") as f:
+            f.write(MDS_CONTENT)
+        
+        logger.info(f"✅ SUCCESS: MDS updated at {target_path}")
+        logger.info("   Status: Sprint 5 Execution Phase")
+        logger.info("   System: Hybrid Core (Python + Rust) Lock-in")
+
+    except Exception as e:
+        logger.error(f"❌ FAILED to update MDS: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    safe_update_mds()

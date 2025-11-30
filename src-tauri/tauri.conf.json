@@ -1,0 +1,22 @@
+{
+  "build": {
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
+    "devPath": "../src-ui",
+    "distDir": "../src-ui/dist"
+  },
+  "package": {
+    "productName": "Convert",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "bundle": {
+      "active": true,
+      "identifier": "com.convert.app",
+      "icon": ["icons/32x32.png"]
+    },
+    "security": {
+      "csp": null
+    }
+  }
+}
