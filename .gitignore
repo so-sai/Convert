@@ -1,31 +1,41 @@
-# Python
+# --- 1. RUST & TAURI GARBAGE (Nặng nhất) ---
+/src-tauri/target/
+/target/
+/src-tauri/gen/
+**/.DS_Store
+**/*.log
+
+# --- 2. NODE JS GARBAGE ---
+node_modules/
+/src-tauri/node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# --- 3. PYTHON GARBAGE ---
 __pycache__/
 *.pyc
 *.pyo
-.venv/
+*.pyd
+.Python
+env/
 venv/
+.venv/
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Build
-dist/
-build/
-
-# IDE
+# --- 4. OS & IDE GARBAGE ---
 .vscode/
 .idea/
-
-# OS
-.DS_Store
 Thumbs.db
+*.swp
 
-# Local configs
+# --- 5. SECURITY ---
 .env
-*.local
-# Tauri / Rust compiler artifacts
-/src-tauri/target/
-/src-tauri/Cargo.lock
-
-# Python cache & venv
-__pycache__/
-*.pyc
-.venv/
-venv/
+*.pem
+*.keysrc-tauri/dist/
+src-tauri/target/
+.antigravity/
+src/*.egg-info/
+src/*.egg-info/

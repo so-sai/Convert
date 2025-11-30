@@ -1,22 +1,20 @@
 {
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "title": "Convert Vault",
+        "width": 800,
+        "height": 600
+      }
+    ]
+  },
   "build": {
-    "beforeDevCommand": "",
-    "beforeBuildCommand": "",
-    "devPath": "../src-ui",
-    "distDir": "../src-ui/dist"
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist"
   },
-  "package": {
-    "productName": "Convert",
-    "version": "0.1.0"
-  },
-  "tauri": {
-    "bundle": {
-      "active": true,
-      "identifier": "com.convert.app",
-      "icon": ["icons/32x32.png"]
-    },
-    "security": {
-      "csp": null
-    }
-  }
+  "identifier": "com.convert.vault"
 }

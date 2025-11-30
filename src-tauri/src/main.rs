@@ -1,1 +1,4 @@
-fn main() { convert_app::run(); }
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+fn main() {
+    convert_vault::run();
+}

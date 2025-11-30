@@ -1,19 +1,20 @@
 [package]
-name = "convert-app"
+name = "convert-vault"
 version = "0.1.0"
-description = "The Iron Vault"
-authors = ["Admin"]
+description = "Omega Vault"
+authors = ["Convert Team"]
 edition = "2021"
 
 [build-dependencies]
-tauri-build = { version = "2.0.0", features = [] }
+tauri-build = { version = "2.0.1", features = [] }
 
 [dependencies]
-tauri = { version = "2.0.0", features = [] }
+tauri = { version = "2.1.0", features = [] }
+tauri-plugin-shell = "2.0.1"
+tauri-plugin-dialog = "2.0.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-bip39 = { version = "2.0", features = ["rand"] }
-zeroize = { version = "1.7", features = ["zeroize_derive"] }
-qrcode = "0.12"
-base64 = "0.21"
-image = { version = "0.24", default-features = false, features = ["png"] }
+# RULE: Explicit version pinning to avoid Trait Bound Errors
+qrcode = { version = "0.14", default-features = false, features = ["image"] }
+image = "0.24.9"
+base64 = "0.22"
