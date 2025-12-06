@@ -1,22 +1,46 @@
-# --- 1. RUST & TAURI GARBAGE (Nặng nhất) ---
-/src-tauri/target/
+# ===================================
+# 🛡️ THE IRON VAULT - GITIGNORE 🛡️
+# ===================================
+
+# --- 1. DATABASE & SECURITY (CRITICAL) ---
+# Chặn tuyệt đối database để tránh lộ data
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.cvbak
+*.cvdb
+
+# Chặn key và secret
+.env
+.env.*
+*.pem
+*.key
+*.p12
+
+# --- 2. RUST & TAURI ARTIFACTS ---
 /target/
+/src-tauri/target/
 /src-tauri/gen/
-**/.DS_Store
-**/*.log
+**/*.rs.bk
 
-# --- 2. NODE JS GARBAGE ---
+# --- 3. FRONTEND ARTIFACTS (SVELTE/VITE) ---
 node_modules/
-/src-tauri/node_modules/
+**/node_modules/
+/src-ui/node_modules/
+/src-ui/.svelte-kit/
+/src-ui/build/
+/src-ui/dist/
+/src-ui/.vercel/
 package-lock.json
-pnpm-lock.yaml
 yarn.lock
+pnpm-lock.yaml
 
-# --- 3. PYTHON GARBAGE ---
+# --- 4. PYTHON ARTIFACTS ---
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
 .Python
 env/
 venv/
@@ -24,18 +48,26 @@ venv/
 .pytest_cache/
 .coverage
 htmlcov/
+src/*.egg-info/
 
-# --- 4. OS & IDE GARBAGE ---
+# --- 5. TEST ARTIFACTS ---
+test_db*
+backup_test*
+heavy_test*
+src-tauri/tests/*.db
+src-tauri/tests/*.cvbak
+
+# --- 6. OS & EDITOR JUNK ---
+.DS_Store
+Thumbs.db
+Desktop.ini
 .vscode/
 .idea/
-Thumbs.db
 *.swp
+*.swo
+*.log
+*.tmp
+build_log.txt
 
-# --- 5. SECURITY ---
-.env
-*.pem
-*.keysrc-tauri/dist/
-src-tauri/target/
+# --- 7. ANTIGRAVITY ---
 .antigravity/
-src/*.egg-info/
-src/*.egg-info/
