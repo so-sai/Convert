@@ -67,7 +67,7 @@ function createBackupStore() {
                         speed: payload.speed,
                         eta: payload.eta,
                         message: payload.msg,
-                        error: payload.phase === 'error' ? payload.msg : null,
+                        error: payload.phase === 'error' ? payload.msg : null, // msg contains error when phase is 'error'
                         isProcessing: payload.phase !== 'done' && payload.phase !== 'error'
                     }));
 

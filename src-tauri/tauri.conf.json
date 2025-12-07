@@ -4,17 +4,17 @@
     "withGlobalTauri": false,
     "windows": [
       {
-        "title": "Convert Vault",
+        "title": "Convert",
         "width": 800,
         "height": 600
       }
     ]
   },
   "build": {
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build",
+    "beforeDevCommand": "npm run dev --prefix ../src-ui",
+    "beforeBuildCommand": "npm run build --prefix ../src-ui",
     "devUrl": "http://localhost:1420",
-    "frontendDist": "../dist"
+    "frontendDist": "../src-ui/dist"
   },
   "identifier": "com.convert.vault"
 }

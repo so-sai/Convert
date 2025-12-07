@@ -1,59 +1,51 @@
-# ADR-008: OMEGA IPC CONTRACT (FULL-STACK SECURITY)
+# HASH: spec-008-ipc-v2
+# IMPLEMENTS: Task 5.3 - Convert Protocol & Blind Recovery
+# STATUS: IMPLEMENTED (Sprint 5)
 
-> **Status:** ACCEPTED
-> **Type:** Architecture Decision Record
-> **Implements:** Hybrid IPC (Command-Init → Event-Stream)
-> **Effective:** Sprint 5+
+# 🔐 SPEC-008: CONVERT PROTOCOL & UI GUIDELINES
+
+> **SSOT Warning:** This document reflects the actual code in `src-tauri` (Rust) and `src-ui` (Svelte).
 
 ---
 
-## 1. CONTEXT
+## 1. BRANDING & IDENTITY (THE LAW)
 
-The Convert Vault requires secure communication between Svelte UI and Rust backend. Two competing patterns exist:
-- **Command-only:** Synchronous, simple, but blocks on long operations
-- **Event-only:** Asynchronous, but no immediate feedback
+| Term | Usage |
+|------|-------|
+| **Convert** | Product Name (OFFICIAL) |
+| **Convert Protocol** | Feature branding in UI |
+| **Backup Protocol** | Technical name for backup system |
 
-## 2. DECISION
+**Design Philosophy:** Modern Card UI (Clean, Neutral, Professional).
+**Anti-Pattern:** Do NOT use "Hacker Terminal" styles. Use "Apple/Stripe" aesthetic.
 
-**Adopt HYBRID MODEL (Mode 3):**
-1. **Commands (`cmd_*`):** Synchronous init, validation, immediate `Result<TaskID>`
-2. **Events (`backup_progress`):** Async streaming from Rust to UI
+---
 
-## 3. DATA CONTRACTS
+## 2. IPC COMMANDS (RUST ↔ SVELTE)
 
-### 3.1 Backup (Omega Protocol)
+### 2.1 Backup Sequence
 
-**Command:**
+**Command:** `cmd_backup_start`
 ```rust
 #[tauri::command]
-async fn cmd_backup_start(
-    app: AppHandle, 
+pub async fn cmd_backup_start(
+    app: AppHandle,
     target_dir: Option<String>
-) -> Result<String, String>
+) -> Result<String, String>  // Returns TaskID
 ```
 
-**Event Channel:** `backup_progress` (SINGLE GLOBAL CHANNEL)
+**Behavior:** 
+- Asynchronous (Fire-and-Forget)
+- Returns `task_id` immediately
+- Spawns worker thread for backup processing
+- Emits `backup_progress` events during operation
 
-**Payload:**
-```typescript
-interface BackupPayload {
-  task_id: string;
-  phase: 'init' | 'snapshot' | 'encrypting' | 'finalizing' | 'done' | 'error';
-  progress: number;      // 0.0 - 100.0
-  speed: string;         // "45 MB/s"
-  eta: string;           // "10-15s" (range, not exact)
-  msg: string;
-  error?: string;
-}
-```
+### 2.2 Blind Recovery
 
-### 3.2 Recovery (Blind Protocol)
-
-**Command:**
+**Command:** `cmd_export_recovery_svg`
 ```rust
 #[tauri::command]
-fn cmd_export_recovery_svg(
-    app: AppHandle, 
+pub fn cmd_export_recovery_svg(
     auth: String
 ) -> Result<ExportResp, String>
 ```
@@ -61,46 +53,63 @@ fn cmd_export_recovery_svg(
 **Response:**
 ```typescript
 interface ExportResp {
-  data_uri: string;      // "data:image/svg+xml;base64,..."
-  ttl_seconds: number;   // 60
+    data_uri: string;      // "data:image/svg+xml;base64,..."
+    ttl_seconds: number;   // 60
 }
 ```
 
-## 4. RULES (INVARIANTS)
+**Security:** SVG is returned as Base64. Frontend must apply CSS `blur` by default.
 
-| # | Rule | Rationale |
-|---|------|-----------|
-| 1 | **`cmd_` Prefix** | All IPC commands must start with `cmd_` |
-| 2 | **Blind UI** | Frontend NEVER receives plaintext mnemonics |
-| 3 | **Hybrid Flow** | Long tasks spawn thread, return TaskID immediately |
-| 4 | **Single Event Channel** | All progress uses `backup_progress` (no dynamic names) |
-| 5 | **Panic Safety** | Workers must catch panics and emit error events |
+---
 
-## 5. CONSEQUENCES
+## 3. EVENT STREAM (REALTIME)
 
-**Positive:**
-- Zero-Trust UI maintained
-- Responsive UX (no blocking)
-- Debuggable (single event source)
+**Channel:** `backup_progress` (Static Global Channel)
 
-**Negative:**
-- More complex than pure command model
-- Requires frontend state management
-
-## 6. VERIFICATION
-
-```bash
-# Rust compiles with new commands
-cargo check
-
-# Commands registered
-grep -r "cmd_backup_start" src-tauri/src/
-
-# Event emitter present
-grep -r "emit.*backup_progress" src-tauri/src/
+**Payload Structure:**
+```typescript
+interface BackupPayload {
+    task_id: string;
+    phase: 'init' | 'snapshot' | 'encrypting' | 'finalizing' | 'done' | 'error';
+    progress: number;    // 0.0 - 100.0
+    speed: string;       // "45 MB/s"
+    eta: string;         // "10-15s" (range)
+    msg: string;         // Human readable status
+}
 ```
+
+**Event Flow:**
+1. Frontend calls `cmd_backup_start`
+2. Rust returns `TaskID` immediately
+3. Frontend listens to `backup_progress` channel
+4. Frontend filters events by `task_id`
+5. Worker thread emits progress events
+6. Worker emits `phase: 'done'` on completion
+
+---
+
+## 4. UI COMPONENT CONTRACT
+
+**File:** `src-ui/src/lib/components/backup/BackupConsole.svelte`
+
+**Requirements:**
+- Display **"CONVERT"** as primary header
+- Progress Bar: Blue (Active) → Green (Done) → Red (Error)
+- Background: Neutral Card on Light App Background
+- State via Svelte stores (`backupStore`)
+
+---
+
+## 5. SECURITY CONSTRAINTS
+
+| Constraint | Implementation |
+|------------|----------------|
+| Zero-Trust | Frontend never sees raw mnemonic (SVG only) |
+| Sanitization | All paths validated in Rust |
+| Panic Safety | Workers catch panics, emit error events |
+| TTL Auto-Wipe | Recovery SVG cleared after `ttl_seconds` |
 
 ---
 
 **Authority:** ARCH_PRIME
-**Hash:** adr-008-omega-ipc-contract
+**Verified:** Sprint 5 Implementation Complete

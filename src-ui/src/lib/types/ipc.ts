@@ -7,8 +7,7 @@ export interface BackupPayload {
     progress: number;       // 0.0 - 100.0
     speed: string;          // "45 MB/s"
     eta: string;            // "10-15s" range
-    msg: string;
-    error?: string;
+    msg: string;            // Error message when phase === 'error'
 }
 
 // Recovery SVG Response (Blind Protocol)

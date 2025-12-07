@@ -60,6 +60,14 @@ Before implementing, read the test file to ensure:
 1. Function names match
 2. Arguments match
 
+### Rule #22: Naming Sanctity (Tên Bất Khả Xâm Phạm)
+| Term | Status | Usage |
+|------|--------|-------|
+| **Convert** | ✅ OFFICIAL | Product name. The ONLY acceptable product name. |
+| **Convert Protocol** | ⚠️ ALLOWED | Feature branding in UI headers/console logs. |
+| **Vault** | ❌ BLACKLISTED | Do NOT use as product name suffix. Use only as technical term (e.g., "vault unlock"). |
+| **Omega Protocol** | ❌ BLACKLISTED | Do NOT use as product/feature name. Use "Backup Protocol" instead. |
+
 ---
 
 ## 3. THE TRI-CHECK PROTOCOL

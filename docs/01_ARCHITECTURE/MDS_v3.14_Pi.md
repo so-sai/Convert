@@ -5,7 +5,7 @@
 # Licensed under PolyForm Noncommercial 1.0.
 # ------------------------------------------------------------------------------
 
-# 📘 MDS v3.14 Pi — THE IRON VAULT
+# 📘 MDS v3.14 Pi — THE IRON CORE
 
 > **Navigation:** [MDS](MDS_v3.14_Pi.md) | [Playbook](../05_OPERATIONS/PLAYBOOK.md) | [Security](../05_OPERATIONS/SECURITY_POLICY.md) | [Lessons](../04_KNOWLEDGE/LESSONS.md)
 
@@ -22,7 +22,7 @@
 
 **Mission:** Offline-first, cryptographically unbreakable, sovereign knowledge system.
 
-**Metaphor:** The Iron Vault — Rust shell protects Python core protects user data.
+**Metaphor:** The Iron Core — Rust shell protects Python core protects user data.
 
 **Values:**
 - **Local Sovereignty** — Data never leaves the machine
@@ -176,6 +176,19 @@ python -m pytest tests/ -v
 | [SECURITY](../05_OPERATIONS/SECURITY_POLICY.md) | Crypto standards |
 | [LESSONS](../04_KNOWLEDGE/LESSONS.md) | Incident history |
 | [ADRs](DECISIONS/) | Decision records |
+
+---
+
+## APPENDIX A: NAMING CONVENTION
+
+| Term | Status | Usage |
+|------|--------|-------|
+| **Convert** | ✅ OFFICIAL | The ONLY product name. |
+| **Convert Protocol** | ⚠️ ALLOWED | Feature branding in UI. |
+| **Vault** | ❌ BLACKLISTED | Product suffix forbidden. Technical term OK. |
+| **Omega Protocol** | ❌ BLACKLISTED | Use "Backup Protocol" instead. |
+
+→ See [PLAYBOOK Rule #22](../05_OPERATIONS/PLAYBOOK.md) for enforcement.
 
 ---
 

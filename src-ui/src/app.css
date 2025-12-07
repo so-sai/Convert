@@ -1,79 +1,95 @@
+/* ==============================================
+   CONVERT UI - BIG SUR AESTHETIC (2020)
+   Philosophy: Vibrancy + Soft Depth + Squircles
+   ============================================== */
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* === GLASSMORPHISM CORE === */
+  --glass-blur: 20px;
+  /* Big Sur standard */
+  --glass-saturation: 180%;
+  /* Vibrancy boost */
+  --glass-opacity: 0.6;
+  /* 60% transparency */
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* === MATERIALS (Vibrancy Layers) === */
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Note: In CSS variables, we can't store full rulesets like mixins. 
+     We'll define colors and use utility classes or local styles for backdrop-filter. */
+
+  /* === CORNER RADIUS (Squircle Approximation) === */
+  --radius-squircle-sm: 12px;
+  /* Small cards */
+  --radius-squircle-md: 20px;
+  /* Standard cards (Big Sur) */
+  --radius-squircle-lg: 24px;
+  /* Large panels */
+
+  /* === SHADOWS (Soft, Colored, Diffused) === */
+  --shadow-glass-sm:
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    0 8px 16px rgba(0, 0, 0, 0.08),
+    0 0 1px rgba(0, 0, 0, 0.1);
+
+  --shadow-glass-md:
+    0 4px 8px rgba(0, 0, 0, 0.06),
+    0 12px 24px rgba(0, 0, 0, 0.1),
+    0 0 1px rgba(0, 0, 0, 0.12);
+
+  --shadow-glass-lg:
+    0 8px 16px rgba(0, 0, 0, 0.08),
+    0 20px 40px rgba(0, 0, 0, 0.12),
+    0 0 1px rgba(0, 0, 0, 0.15);
+
+  /* === COLORS (Big Sur Palette) === */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F5F5F7;
+  --color-text-primary: #1D1D1F;
+  --color-text-secondary: #86868B;
+
+  --color-action: #007AFF;
+  /* System Blue */
+  --color-success: #34C759;
+  /* System Green */
+  --color-error: #FF3B30;
+  /* System Red */
+
+  /* === SPACING (8pt Grid) === */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+/* === DARK MODE (Big Sur) === */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg-primary: #1C1C1E;
+    --color-bg-secondary: #2C2C2E;
+    --color-text-primary: #FFFFFF;
+    --color-text-secondary: #98989D;
+  }
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
+  padding: 0;
+  /* CROSS-PLATFORM PREMIUM TYPOGRAPHY */
+  font-family:
+    /* 1. Windows 11 Modern */
+    "Segoe UI Variable Display", "Segoe UI Variable Text",
+    /* 2. macOS & iOS */
+    -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    /* 3. Windows 10 Fallback */
+    "Segoe UI",
+    /* 4. Linux & Generic */
+    Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
+  /* Optimized rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 
-.card {
-  padding: 2em;
-}
-
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
 }
