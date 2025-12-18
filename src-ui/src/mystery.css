@@ -1,0 +1,93 @@
+/* ==============================================
+   MYSTERY.CSS - THE AURORA ENGINE
+   "Felt, not explained"
+   ============================================== */
+
+/* The Canvas */
+.celestial-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 50%, #ffffff 0%, #f0f2f5 100%);
+    pointer-events: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    .celestial-backdrop {
+        background: radial-gradient(circle at 50% 50%, #1c1c1e 0%, #000000 100%);
+    }
+}
+
+/* The Orbs (Blobs) */
+.orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.6;
+    animation: drift 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.orb-1 {
+    top: -10%;
+    left: -10%;
+    width: 50vw;
+    height: 50vw;
+    background: radial-gradient(circle, #a7c5eb 0%, rgba(167, 197, 235, 0) 70%);
+    animation-delay: 0s;
+}
+
+.orb-2 {
+    bottom: -10%;
+    right: -10%;
+    width: 60vw;
+    height: 60vw;
+    background: radial-gradient(circle, #e8aeb7 0%, rgba(232, 174, 183, 0) 70%);
+    animation-delay: -5s;
+}
+
+.orb-3 {
+    top: 20%;
+    left: 40%;
+    width: 30vw;
+    height: 30vw;
+    background: radial-gradient(circle, #b8e994 0%, rgba(184, 233, 148, 0) 70%);
+    animation-delay: -10s;
+    opacity: 0.4;
+}
+
+@media (prefers-color-scheme: dark) {
+    .orb-1 {
+        background: radial-gradient(circle, #1e3a8a 0%, rgba(30, 58, 138, 0) 70%);
+        /* Dark Blue */
+    }
+
+    .orb-2 {
+        background: radial-gradient(circle, #581c87 0%, rgba(88, 28, 135, 0) 70%);
+        /* Dark Purple */
+    }
+
+    .orb-3 {
+        background: radial-gradient(circle, #064e3b 0%, rgba(6, 78, 59, 0) 70%);
+        /* Dark Green */
+    }
+}
+
+/* The Movement */
+@keyframes drift {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    100% {
+        transform: translate(30px, 50px) scale(1.1);
+    }
+}
+
+/* Utilities for Transparency */
+.transparent-bg {
+    background-color: transparent !important;
+}

@@ -211,6 +211,187 @@ def _execute_vacuum_into(source_db: Path, target_db: Path):
 
 ---
 
+### INCIDENT 5: Phantom API (sqlite3_backup_pagecount)
+
+**Sprint:** 5, Task 5.1 | **Severity:** HIGH | **Rule:** #3 (Omega Protocol)
+
+**Symptom:**
+```
+error: linking with `link.exe` failed
+undefined reference to `sqlite3_backup_pagecount`
+```
+
+**Root Cause:**
+- Attempted to use `sqlite3_backup_pagecount` API on Windows
+- API exists in documentation but not in Windows SQLite builds
+- Wasted 3 days debugging compilation errors
+
+**Solution (Omega Protocol):**
+```rust
+// ❌ WRONG (Phantom API)
+let total_pages = unsafe { sqlite3_backup_pagecount(backup) };
+
+// ✅ RIGHT (Filesystem as Truth)
+let total = fs::metadata(&src_path)?.len();
+let current = fs::metadata(&dst_path)?.len();
+let progress = (current as f64 / total as f64).min(0.999) * 100.0;
+```
+
+**Lesson:** When in doubt about C/C++ APIs, use OS filesystem as source of truth.
+
+---
+
+### INCIDENT 6: Lost in Monorepo (Cross-Directory Command)
+
+**Sprint:** 5, Task 5.2 | **Severity:** MEDIUM | **Rule:** #6 (Monorepo Boundaries)
+
+**Symptom:**
+```
+Error: Couldn't recognize the current folder as a Tauri project
+```
+
+**Root Cause:**
+- Standing at project root or `src-ui` and running `tauri dev`
+- Tauri v2 requires config file in current or child directories
+- Monorepo structure confuses CLI path resolution
+
+**Solution:**
+```bash
+# ❌ WRONG (from root)
+cd E:\DEV\Convert
+npx tauri dev
+
+# ❌ WRONG (from src-ui without config)
+cd src-ui
+npx tauri dev
+
+# ✅ RIGHT (Cross-Directory Command)
+cd src-ui
+npx tauri dev --config ../src-tauri/tauri.conf.json
+```
+
+**Lesson:** Stand at Backend (src-tauri) to satisfy config, but borrow tools from Frontend (../src-ui/node_modules/.bin/tauri).
+
+---
+
+### INCIDENT 7: Environmental Hazard (Missing C++ Build Tools)
+
+**Sprint:** 5, Task 5.1 | **Severity:** CRITICAL | **Rule:** New Rule #23
+
+**Symptom:**
+```
+error: linker `link.exe` not found
+note: program not found
+```
+
+**Root Cause:**
+- Missing Visual Studio C++ Build Tools
+- Missing Windows SDK
+- Rust cannot link native dependencies
+
+**Solution:**
+```powershell
+# Install Visual Studio Build Tools
+winget install Microsoft.VisualStudio.2022.BuildTools
+
+# Required workloads:
+- Desktop development with C++
+- Windows 10/11 SDK
+```
+
+**Verification:**
+```bash
+rustc --version
+cargo build --release
+```
+
+**Lesson:** Windows Rust development requires full C++ toolchain. Document in setup guide.
+
+---
+
+### INCIDENT 8: Concurrency Chaos (Test Thread Conflicts)
+
+**Sprint:** 5, Task 5.2 | **Severity:** MEDIUM | **Rule:** New Rule #24
+
+**Symptom:**
+```
+[WinError 32] The process cannot access the file because it is being used by another process
+```
+
+**Root Cause:**
+- `cargo test` runs tests in parallel by default
+- Multiple tests accessing same SQLite database simultaneously
+- Windows file locking prevents concurrent access
+
+**Solution:**
+```bash
+# ❌ WRONG (parallel tests)
+cargo test
+
+# ✅ RIGHT (sequential tests)
+cargo test -- --test-threads=1
+```
+
+**Permanent Fix:**
+```toml
+# .cargo/config.toml
+[test]
+threads = 1
+```
+
+**Lesson:** All Windows tests MUST run sequentially. Add to CI/CD pipeline.
+
+---
+
+### INCIDENT 9: Git Hygiene Disaster (Paste Corruption)
+
+**Sprint:** 5, Task 5.1 | **Severity:** LOW | **Rule:** New Rule #25
+
+**Symptom:**
+- `.gitignore` file corrupted with invisible characters
+- Committed large database files (>100MB)
+- Committed system junk files (`.DS_Store`, `Thumbs.db`)
+
+**Root Cause:**
+- Pasting terminal commands into `.gitignore` caused encoding issues
+- Loose `.gitignore` patterns missed critical files
+- Manual file editing error-prone
+
+**Solution:**
+```python
+# Use Python script for config files (safer than manual paste)
+def update_gitignore(patterns: list[str]):
+    gitignore_path = Path(".gitignore")
+    existing = gitignore_path.read_text().splitlines()
+    new_patterns = [p for p in patterns if p not in existing]
+    
+    with gitignore_path.open("a", encoding="utf-8") as f:
+        f.write("\n".join(new_patterns) + "\n")
+```
+
+**Strict `.gitignore`:**
+```gitignore
+# Database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.cvbak
+*.bak
+
+# System junk
+.DS_Store
+Thumbs.db
+desktop.ini
+```
+
+**Lesson:** Use Python scripts for config file updates. Never paste multi-line content directly into files.
+
+---
+
 ## 📊 Quick Reference Patterns
 
 ### Windows File Operations
@@ -257,6 +438,9 @@ let eta_max = remaining / (mean - std_dev).max(0.1);
 | 19 | Toxic Waste | Secure wipe all temp files |
 | 20 | Atomic DB | Use `VACUUM INTO` for backups |
 | 21 | Signature Align | Read test files before implementing |
+| 23 | C++ Toolchain | Windows Rust requires VS Build Tools |
+| 24 | Sequential Tests | `cargo test -- --test-threads=1` on Windows |
+| 25 | Config Scripts | Use Python for file updates, not paste |
 
 ---
 
@@ -268,6 +452,11 @@ let eta_max = remaining / (mean - std_dev).max(0.1);
 | Libsodium Hallucination | #18 | CRITICAL | Verify AI crypto code |
 | Toxic Waste | #19 | MEDIUM | Secure wipe temp files |
 | Atomic Snapshot | #20 | MEDIUM | Use `VACUUM INTO` |
+| Phantom API | #3 | HIGH | Filesystem as truth |
+| Lost in Monorepo | #6 | MEDIUM | Cross-directory commands |
+| Environmental Hazard | #23 | CRITICAL | Install VS Build Tools |
+| Concurrency Chaos | #24 | MEDIUM | Sequential tests only |
+| Git Hygiene | #25 | LOW | Python scripts for configs |
 
 ---
 

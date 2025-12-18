@@ -1,196 +1,170 @@
-# HASH: mds-v3-14-pi-crystal
-# IMPLEMENTS: MDS v3.14 Pi — Crystal Edition
-# ------------------------------------------------------------------------------
-# PROJECT CONVERT (C) 2025
-# Licensed under PolyForm Noncommercial 1.0.
-# ------------------------------------------------------------------------------
+# MDS v3.14 Pi — Technical Strategy Mapping (Crystal Edition)
 
-# 📘 MDS v3.14 Pi — THE IRON CORE
-
-> **Navigation:** [MDS](MDS_v3.14_Pi.md) | [Playbook](../05_OPERATIONS/PLAYBOOK.md) | [Security](../05_OPERATIONS/SECURITY_POLICY.md) | [Lessons](../04_KNOWLEDGE/LESSONS.md)
+> **Ref:** TASK-5.3 (Hybrid SSOT) | **Audit:** OMEGA_ARCH | **Status:** FROZEN
+> **Phiên bản:** Kỹ thuật, Thực thi, Không Marketing.
+> **Mục tiêu:** Biến "Trust Framework" thành Code chạy được (Rust Core + Python Brain + Svelte Face).
 
 ---
 
-> **Engine:** Python 3.14 (Pi) + Rust (Tauri v2) + Svelte 5
-> **Edition:** Crystal
-> **SSOT:** This Document
-> **Updated:** 2025-12-07
+## I. CỐT LÕI CHIẾN LƯỢC (STRATEGIC CORE)
+
+### 1. Định vị (Positioning)
+Chúng ta không xây dựng **Utility** (Công cụ chuyển đổi), chúng ta xây dựng **Trust Framework** (Nền tảng niềm tin).
+* **Đối thủ:** Convert file xong là hết trách nhiệm.
+* **Convert Vault:** Quản lý trọn vẹn **Data Lifecycle Integrity** (Input → Convert → Validate → Seal → Persist → Destroy).
+
+### 2. Ba Trụ Cột SSOT (The 3 Pillars)
+1.  **Local-first Compute:** Mọi xử lý diễn ra tại máy client. Không Cloud.
+2.  **Zero-Trust Pipeline:** Các module (Watcher, Engine, Vault) không tin nhau, phải xác thực qua chữ ký.
+3.  **Hybrid Architecture:**
+    * **Python:** The Brain (SSOT, State, Logic).
+    * **Rust:** The Muscle (Crypto, Enforcer, IO).
+    * **Svelte:** The Face (Ephemeral View, Interaction).
 
 ---
 
-## 1. THE DOCTRINE
+## II. MAPPING: 3-LAYER ARCHITECTURE & UI/UX
 
-**Mission:** Offline-first, cryptographically unbreakable, sovereign knowledge system.
+### LAYER 1: CORE ENGINE (RUST) — "THE MUSCLE"
+*Nơi thực thi bất biến, bảo mật tuyệt đối.*
 
-**Metaphor:** The Iron Core — Rust shell protects Python core protects user data.
+1.  **Convert Engine v2.3:**
+    * Pure Rust bindings. Sandbox file ops.
+    * **Omega Fix:** Không dùng subprocess. Dùng PyO3 embedding trực tiếp (`maturin build`) để loại bỏ latency 30-40ms.
+2.  **Vault Storage Kernel:**
+    * Encrypted FS: XChaCha20-Poly1305 (24-byte nonce).
+    * **Omega Fix:** `Argon2id` KDF parameters tối ưu hóa.
+    * **Commit Flow:** Write → Seal → Hash → Sign → Expose to UI.
+3.  **Security Enforcer:**
+    * **Memory Hygiene:** Tự động zeroize bộ nhớ khi sleep/hibernate (Windows Power API hooks).
+    * **Snapshot Binding:** Gắn output + hash tree + policy version.
 
-**Values:**
-- **Local Sovereignty** — Data never leaves the machine
-- **Zero-Trust** — Frontend is blind; Rust handles secrets
-- **Resilience** — Crash-proof, atomic, verifiable
+### LAYER 2: ORCHESTRATION (PYTHON) — "THE BRAIN"
+*Nơi chứa SSOT và điều phối luồng.*
 
----
+1.  **SSOT Registry (AppState):**
+    * Lưu trữ trạng thái duy nhất của ứng dụng.
+    * **Schema (Pydantic V2 Strict):**
+        ```json
+        {
+          "version": 1,
+          "timestamp": 1733650000,
+          "navigation": {
+            "active_module": "notes",
+            "last_route": "/notes/view/123",
+            "ui_depth": 2
+          },
+          "modules": { ... },
+          "panels": {
+            "notes": { "split": { "left": 0.33, "right": 0.67 } }
+          }
+        }
+        ```
+    * **Invariant:** Frontend coi các trường lạ là opaque (hộp đen), không tự ý sửa schema.
 
-## 2. THE 6 IRON LAWS
+2.  **Task Orchestrator:**
+    * Điều phối: FS Watcher → Convert → Vault.
+    * **Omega Fix:** Xử lý `PRAGMA wal_autocheckpoint` cho SQLite để tránh file WAL phình to >1GB.
+    * **Path Handling:** Sử dụng `pathlib` + fix cho PyInstaller (`sys.frozen`) để chạy đúng trên Windows.
 
-| # | Law | Constraint |
-|---|-----|------------|
-| 1 | **Monorepo** | `src/core` = Python, `src-tauri` = Rust, `src-ui` = Svelte. No exceptions. |
-| 2 | **Zero-Trust UI** | Frontend receives only: status, aggregates, `data:image/*`. Never plaintext secrets. |
-| 3 | **Zero-Network** | No cloud, no telemetry, no external API. 100% offline. |
-| 4 | **Deterministic Build** | Same code → same binary. Pin all dependencies. |
-| 5 | **Atomic Operations** | All writes use temp→rename pattern. No partial states. |
-| 6 | **Crypto-First** | Security code in Rust only. Zeroize all buffers. No Python crypto. |
+3.  **Audit Log Stream:**
+    * Append-only, signed by Rust Keystore.
+    * Ghi lại mọi thay đổi trạng thái quan trọng (State Mutation).
 
-→ Violations are architecture bugs, not features.
+### LAYER 3: INTERACTION (SVELTE) — "THE FACE"
+*Nơi người dùng cảm nhận giá trị.*
 
----
+1.  **Lớp 1 — HOME (Shelf & Dock):**
+    * **3 Cuốn sách (Books):** Convert / Notes / Workflow. Dựng dọc.
+    * **Dock:** Chứa Global Settings, Profile.
+    * **Hành vi:** Click sách -> Animation transition -> Gọi `cmd_save_app_state`.
 
-## 3. ARCHITECTURE
+2.  **Lớp 2 — WORKSPACE (Split View):**
+    * **Master/Detail:** Cơ chế chia đôi màn hình (Split View).
+    * **Persist:** Tự động nhớ vị trí thanh trượt (Split position) vào Python State.
+    * **Behavior:** Module cũ thu nhỏ thành card (thumb), module mới mở ra.
 
-### 3.1 Component Boundaries
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    SVELTE UI (src-ui)                   │
-│                 [BLIND - No Secrets]                    │
-└──────────────────────────┬──────────────────────────────┘
-                           │ Tauri IPC (events only)
-┌──────────────────────────▼──────────────────────────────┐
-│                  RUST CORE (src-tauri)                  │
-│         [Crypto, Backup, Memory Safety, Zeroize]        │
-└──────────────────────────┬──────────────────────────────┘
-                           │ PyO3 / Subprocess
-┌──────────────────────────▼──────────────────────────────┐
-│                 PYTHON CORE (src/core)                  │
-│          [Business Logic, Events, Storage]              │
-└─────────────────────────────────────────────────────────┘
-```
-
-### 3.2 Directory Structure
-
-```
-E:/DEV/Convert/
-├── docs/                 # This document + ADRs
-├── src/core/             # Python: logic, storage, events
-├── src-tauri/            # Rust: crypto, backup, security
-├── src-ui/               # Svelte: UI only
-├── tests/                # All tests
-└── scripts/              # DevOps tools
-```
-
-### 3.3 Data Flow
-
-```mermaid
-graph LR
-    UI[Svelte UI] -->|cmd| Rust[Rust Core]
-    Rust -->|call| Python[Python Core]
-    Python -->|query| DB[(SQLite)]
-    Rust -->|encrypt| DB
-    Rust -->|event| UI
-```
+3.  **Lớp 3 — COGNITIVE (Interface Layers):**
+    * **Sensory:** Drag & Drop, Tactile feedback.
+    * **Recovery Viewer:** "X-ray" file để kiểm tra hash integrity.
+    * **AI Hooks:** Chỉ hiển thị gợi ý (Suggest), không tự thực thi (Execute) nếu không có xác nhận.
 
 ---
 
-## 4. PROTOCOLS
+## III. IMPLEMENTATION CONTRACTS (QUY TẮC BẤT DI BẤT DỊCH)
 
-### 4.1 Omega Backup Protocol
+1.  **Contract #1: No Secrets in IPC**
+    * Frontend **KHÔNG BAO GIỜ** nhận key, mnemonic, password dạng plaintext.
+    * Chỉ nhận: Token tạm (Ephemeral), Status, Progress, Hash.
+    * **Omega Fix:** Dùng `Zeroizing<SecretBytes>` wrapper ngay tại biên giới PyO3.
 
-| Phase | Range | Action |
-|-------|-------|--------|
-| Prepare | 0-5% | Validate paths, init workers |
-| Snapshot | 5-10% | `VACUUM INTO` atomic copy |
-| Encrypt | 10-90% | XChaCha20-Poly1305 stream |
-| Finalize | 90-100% | Verify hash, atomic rename |
+2.  **Contract #2: Python is The Boss**
+    * Frontend không lưu logic. Frontend chỉ render `AppState` nhận từ Python.
+    * Mọi thay đổi (Click, Resize, Config) -> Gửi Command về Python -> Python Validate & Save -> Emit Event update UI.
 
-**Constraints:**
-- Dual-thread: Worker + Monitor
-- ETA: Range only ("12-18s"), never exact
-- Heartbeat: Every 2-5 seconds
-- Cancel: Safe at any point
-
-### 4.2 Recovery Protocol
-
-| Step | Actor | Action |
-|------|-------|--------|
-| 1 | Rust | Generate BIP39 mnemonic |
-| 2 | Rust | Render to QR in memory |
-| 3 | Rust | Encode as `data:image/svg+xml;base64,...` |
-| 4 | UI | Display image (never sees words) |
-
-**Constraint:** Mnemonic string NEVER crosses IPC boundary.
-
-### 4.3 Crypto Protocol
-
-| Operation | Algorithm | Parameters |
-|-----------|-----------|------------|
-| KDF | Argon2id | 19 MiB, t=2, p=1 |
-| Encrypt | XChaCha20-Poly1305 | 24-byte nonce |
-| Key Wrap | Same | DEK wrapped by KEK |
-| Memory | Zeroizing<T> | VirtualLock on Windows |
-
-**Constraint:** All crypto operations in Rust only.
+3.  **Contract #3: Graceful Degradation**
+    * Nếu Module chưa sẵn sàng (Workflow) -> Show Toast "Coming Soon" (Non-blocking).
+    * Nếu C-Binding lỗi (Memory Zeroing) -> Fallback về Manual Overwrite (ADR-006).
 
 ---
 
-## 5. ROADMAP
+## IV. ROADMAP THỰC THI (ACTIONABLE)
 
-### Sprint 5 (Current) — Security Foundation
+1.  **Phase 1: Foundation (DONE)**
+    * [x] UI Skeleton (Svelte).
+    * [x] Security Protocol (Blind Protocol, ADR-006).
 
-| Task | Status |
-|------|--------|
-| 5.1 Recovery Phrase | ✅ Done |
-| 5.2 Secure Backup | ✅ Done |
-| 5.3 Frontend Integration | ✅ Done |
-| 5.4 Key Rotation | ⏳ Sprint 6 |
+2.  **Phase 2: SSOT Integration (NEXT - PRIORITY)**
+    * [ ] **Rust:** Implement `cmd_get_app_state` / `cmd_save_app_state`.
+    * [ ] **Python:** Define Pydantic Models cho `AppState`. Implement `Dispatcher`.
+    * [ ] **Tauri:** Cấu hình `orjson` thay vì `serde_json` (Performance).
 
-### Sprint 6 (Next) — Cognitive Layer
-
-- Encrypted FTS5 search
-- Local Vector DB
-- LLM Integration (offline, CPU-first)
-- Key Rotation Infrastructure
+3.  **Phase 3: Features**
+    * [ ] HomeShelf Component.
+    * [ ] SplitView Logic.
+    * [ ] SQLite WAL Tuning.
 
 ---
 
-## 6. OPERATIONAL COMMANDS
+## V. DETAILED PROTOCOLS (PRESERVED)
 
-```bash
-# Dev Server
-cd src-ui && npx tauri dev --config ../src-tauri/tauri.conf.json
+### 5.1 OMEGA Backup Protocol (The Engine)
 
-# Rust Tests
-cd src-tauri && cargo test -- --test-threads=1
+| Phase | Action (Rust) | Action (Python) | State |
+| :--- | :--- | :--- | :--- |
+| **1. INIT** | `cmd_backup_start(target)` | Validate Path, Check Lock | `BUSY` |
+| **2. SNAPSHOT** | **Atomic Freeze:** `VACUUM INTO` | Calculate Checksums | `LOCKED` |
+| **3. ENCRYPT** | **XChaCha20-Poly1305** Stream | Monitor RAM Usage (<100MB) | `ENCRYPTING` |
+| **4. FINALIZE** | Sign Metadata (Ed25519) | Rename `.tmp` -> `.cvbak` | `DONE` |
 
-# Python Tests
-python -m pytest tests/ -v
-```
+### 5.2 Recovery Protocol (The Restore)
 
----
+1.  **Verify:** Check Magic Header (`CVBAK`), Version, Signature.
+2.  **Auth:** Prompt User Passphrase -> Derive Key (Argon2id).
+3.  **Decrypt:** Stream Decrypt to Temp DB.
+4.  **Integrity:** Check SQLite `PRAGMA integrity_check`.
+5.  **Swap:** Atomic Swap (Move old DB -> `.bak`, Move Temp DB -> Main).
 
-## 7. DOCUMENT LINKS
+### 5.3 Cryptographic Parameters (Hardcoded)
 
-| Doc | Purpose |
-|-----|---------|
-| [PLAYBOOK](../05_OPERATIONS/PLAYBOOK.md) | Engineering rules |
-| [SECURITY](../05_OPERATIONS/SECURITY_POLICY.md) | Crypto standards |
-| [LESSONS](../04_KNOWLEDGE/LESSONS.md) | Incident history |
-| [ADRs](DECISIONS/) | Decision records |
+| Component | Algorithm | Parameters |
+| :--- | :--- | :--- |
+| **KDF** | Argon2id | Memory: 64MB, Iterations: 4, Lanes: 4 |
+| **Encryption** | XChaCha20-Poly1305 | Nonce: 24 bytes (Random) |
+| **Signature** | Ed25519 | Context: `convert_vault_v1` |
+| **Hash** | BLAKE3 | Merkle Tree Mode enabled |
 
 ---
 
 ## APPENDIX A: NAMING CONVENTION
 
-| Term | Status | Usage |
-|------|--------|-------|
-| **Convert** | ✅ OFFICIAL | The ONLY product name. |
-| **Convert Protocol** | ⚠️ ALLOWED | Feature branding in UI. |
-| **Vault** | ❌ BLACKLISTED | Product suffix forbidden. Technical term OK. |
-| **Omega Protocol** | ❌ BLACKLISTED | Use "Backup Protocol" instead. |
-
-→ See [PLAYBOOK Rule #22](../05_OPERATIONS/PLAYBOOK.md) for enforcement.
+* **Rust (Crate):** `snake_case` (e.g., `cmd_backup_start`)
+* **Python (Module):** `snake_case` (e.g., `backup_service.py`)
+* **Svelte (Component):** `PascalCase` (e.g., `BackupConsole.svelte`)
+* **IPC Events:** `camelCase` (e.g., `backupProgress`)
+* **File Extension:** `.cvbak` (Convert Vault Backup)
 
 ---
 
-**AUTHORITY:** ARCH_PRIME
-**HASH:** mds-v3-14-pi-crystal
+**Authorized by:** ARCH_PRIME
+**Compliance:** OMEGA_ARCH (Security Checked)

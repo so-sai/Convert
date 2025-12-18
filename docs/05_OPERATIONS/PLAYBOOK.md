@@ -68,6 +68,81 @@ Before implementing, read the test file to ensure:
 | **Vault** | ❌ BLACKLISTED | Do NOT use as product name suffix. Use only as technical term (e.g., "vault unlock"). |
 | **Omega Protocol** | ❌ BLACKLISTED | Do NOT use as product/feature name. Use "Backup Protocol" instead. |
 
+### Rule #24: Artifact-First Protocol (The "Vibe" Rule)
+1. **Planning Mode:** When facing complexity, switch to Planning Mode.
+2. **Visualize:** Create an Artifact (Mermaid/Checklist) before coding.
+3. **Async Feedback:** Wait for User approval on the Artifact.
+4. **Execution:** Only write code after Artifact is approved.
+
+### Rule #25: The Bleeding Edge Protocol (Python/Rust Compatibility)
+**Context:** When project uses a Python version newer than PyO3's maximum supported version.
+**Anti-Pattern:**
+- ❌ NEVER downgrade Python
+- ❌ NEVER wait for library updates
+**Solution (The ABI Bridge):**
+- ✅ Use **Stable ABI (`abi3`)** feature in PyO3
+- ✅ Configure Rust to compile with nearest stable version (e.g., `abi3-py312`)
+- ✅ Python 3.14+ automatically compatible with 3.12 ABI
+**Philosophy:** "Core vững (Rust) thì chấp Interface cũ, nhưng Brain (Python) phải luôn mới nhất."
+```toml
+pyo3 = { version = "0.22", features = ["auto-initialize", "abi3-py312"] }
+```
+
+### Rule #26: Context Preservation (Anti-Blind Overwrite)
+**Problem:** Agent overwrites entire file, losing existing functionality
+**Anti-Pattern:**
+- ❌ Generate new file without reading current state
+- ❌ Copy-paste examples that lack full context
+- ❌ "Fix logic" by deleting UI components
+**Solution:**
+- ✅ ALWAYS read full file before editing (use `view_file`)
+- ✅ Use targeted patches (change only what's needed)
+- ✅ Verify artifact merge includes ALL previous features
+**Example (Sprint 5 Mistake):**
+```svelte
+// ❌ WRONG: Overwrote App.svelte with only DropZone
+<DropZone /> <!-- Lost: 3 cards, theme toggle, sidebar -->
+
+// ✅ RIGHT: Preserved all components
+<Sidebar />
+<ThemeToggle />
+<Cards />
+<DropZone /> <!-- Added without removing others -->
+```
+
+### Rule #27: The Admin Trap (Windows UIPI)
+**Problem:** Drag & Drop fails silently when app runs as Administrator
+**Root Cause:** Windows User Interface Privilege Isolation (UIPI)
+- Explorer runs at Medium Integrity (User level)
+- Admin terminal runs at High Integrity
+- Windows blocks Medium → High event flow (security feature)
+**Detection:**
+```bash
+whoami /groups | findstr "S-1-16-12288"  # High Mandatory Level = Admin
+```
+**Solution:**
+- ✅ ALWAYS run dev server as normal user (not Admin)
+- ✅ Add to setup docs: "Close Admin terminals before `cargo tauri dev`"
+- ✅ If drag events don't fire: check integrity level FIRST, not code
+**Why it's silent:** Tauri receives no error - OS simply doesn't deliver the event
+
+### Rule #28: Configuration Version Awareness
+**Problem:** Using deprecated config from older framework version
+**Sprint 5 Examples:**
+- Tauri v1: `fileDropEnabled` → Tauri v2: `dragDropEnabled` + capabilities
+- Missing `capabilities/default.json` → Events silently blocked
+**Solution:**
+- ✅ Check framework version in `Cargo.toml` / `package.json`
+- ✅ Read migration guide when upgrading major versions
+- ✅ Use schema validation: `$schema` in config files
+```json
+// Tauri v2 requires capabilities system
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "permissions": ["core:window:default", "core:event:allow-listen"]
+}
+```
+
 ---
 
 ## 3. THE TRI-CHECK PROTOCOL
@@ -82,7 +157,26 @@ All critical features pass through 3 phases:
 
 ---
 
-## 4. GIT WORKFLOW (SOLO LEVELING)
+---
+
+## 4. VIBE CODING MENTAL MODEL
+**"From Micro-management to Orchestration"**
+
+### 1. Artifact as Communication Layer
+- **Old (Chat):** Context is lost in the stream.
+- **New (Artifact):** Artifact is the Anchor. Sếp and Agent discuss ON the Artifact.
+
+### 2. Async Steering
+- **Pain Point:** Watching CLI progress bars.
+- **Solution:** Approve the Plan (Artifact) -> Agent executes blindly -> User reviews Result.
+
+### 3. Workflow Orchestration
+- Workflows trigger each other (Planning -> TDD -> Implementation -> Review).
+- Antigravity is a pipeline, not just a coder.
+
+---
+
+## 5. GIT WORKFLOW (SOLO LEVELING)
 
 ### Branch Strategy
 ```bash

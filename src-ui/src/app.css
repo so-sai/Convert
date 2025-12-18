@@ -1,95 +1,59 @@
-/* ==============================================
-   CONVERT UI - BIG SUR AESTHETIC (2020)
-   Philosophy: Vibrancy + Soft Depth + Squircles
-   ============================================== */
-
 :root {
-  /* === GLASSMORPHISM CORE === */
-  --glass-blur: 20px;
-  /* Big Sur standard */
-  --glass-saturation: 180%;
-  /* Vibrancy boost */
-  --glass-opacity: 0.6;
-  /* 60% transparency */
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
 
-  /* === MATERIALS (Vibrancy Layers) === */
-
-  /* Note: In CSS variables, we can't store full rulesets like mixins. 
-     We'll define colors and use utility classes or local styles for backdrop-filter. */
-
-  /* === CORNER RADIUS (Squircle Approximation) === */
-  --radius-squircle-sm: 12px;
-  /* Small cards */
-  --radius-squircle-md: 20px;
-  /* Standard cards (Big Sur) */
-  --radius-squircle-lg: 24px;
-  /* Large panels */
-
-  /* === SHADOWS (Soft, Colored, Diffused) === */
-  --shadow-glass-sm:
-    0 2px 4px rgba(0, 0, 0, 0.05),
-    0 8px 16px rgba(0, 0, 0, 0.08),
-    0 0 1px rgba(0, 0, 0, 0.1);
-
-  --shadow-glass-md:
-    0 4px 8px rgba(0, 0, 0, 0.06),
-    0 12px 24px rgba(0, 0, 0, 0.1),
-    0 0 1px rgba(0, 0, 0, 0.12);
-
-  --shadow-glass-lg:
-    0 8px 16px rgba(0, 0, 0, 0.08),
-    0 20px 40px rgba(0, 0, 0, 0.12),
-    0 0 1px rgba(0, 0, 0, 0.15);
-
-  /* === COLORS (Big Sur Palette) === */
-  --color-bg-primary: #FFFFFF;
-  --color-bg-secondary: #F5F5F7;
-  --color-text-primary: #1D1D1F;
-  --color-text-secondary: #86868B;
-
-  --color-action: #007AFF;
-  /* System Blue */
-  --color-success: #34C759;
-  /* System Green */
-  --color-error: #FF3B30;
-  /* System Red */
-
-  /* === SPACING (8pt Grid) === */
-  --space-1: 8px;
-  --space-2: 16px;
-  --space-3: 24px;
-  --space-4: 32px;
+  /* === LIGHT MODE (DEFAULT - NOTION/APPLE STYLE) === */
+  --bg-app: #F5F5F7;
+  --bg-sidebar: rgba(245, 245, 247, 0.8);
+  --bg-card: rgba(255, 255, 255, 0.6);
+  --border-glass: rgba(0, 0, 0, 0.05);
+  --text-main: #1D1D1F;
+  --text-sub: #86868b;
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.08);
+  --accent-blue: #0071e3;
+  --accent-green: #34c759;
+  --accent-purple: #af52de;
+  --btn-bg: #FFFFFF;
+  --btn-hover: #F2F2F2;
+  --glass-blur: blur(20px) saturate(180%);
 }
 
-/* === DARK MODE (Big Sur) === */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg-primary: #1C1C1E;
-    --color-bg-secondary: #2C2C2E;
-    --color-text-primary: #FFFFFF;
-    --color-text-secondary: #98989D;
-  }
+/* === DARK MODE (IRON VAULT STYLE) === */
+[data-theme="dark"] {
+  --bg-app: #0F0F0F;
+  --bg-sidebar: rgba(30, 30, 30, 0.6);
+  --bg-card: rgba(30, 30, 30, 0.5);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --text-main: #F5F5F7;
+  --text-sub: #888888;
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.2);
+  --shadow-hover: 0 24px 48px rgba(0, 0, 0, 0.4);
+  --accent-blue: #2563eb;
+  --accent-green: #16a34a;
+  --accent-purple: #9333ea;
+  --btn-bg: rgba(255, 255, 255, 0.05);
+  --btn-hover: rgba(255, 255, 255, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  /* CROSS-PLATFORM PREMIUM TYPOGRAPHY */
-  font-family:
-    /* 1. Windows 11 Modern */
-    "Segoe UI Variable Display", "Segoe UI Variable Text",
-    /* 2. macOS & iOS */
-    -apple-system, BlinkMacSystemFont, "SF Pro Text",
-    /* 3. Windows 10 Fallback */
-    "Segoe UI",
-    /* 4. Linux & Generic */
-    Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-
-  /* Optimized rendering */
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-
-  background-color: var(--color-bg-secondary);
-  color: var(--color-text-primary);
 }
