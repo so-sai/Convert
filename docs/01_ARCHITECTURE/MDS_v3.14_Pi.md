@@ -129,7 +129,9 @@ Chúng ta không xây dựng **Utility** (Công cụ chuyển đổi), chúng ta
 4.  **Phase 4: Background Services (Sprint 6 - Dec 2025)**
     * [x] **Task 6.1:** Watchdog Core - 22/22 tests, POSIX paths, UUID batch tracking.
     * [x] **Task 6.2:** EventBus - 8/8 tests, 260K/sec publish, 0% drop rate (200K queue).
-    * [ ] **Task 6.3:** Indexer Queue - SQLite-based job queue (NEXT).
+    * [x] **Task 6.3:** Indexer Queue - 10/10 tests, SQLite-based job queue, LRU cache idempotency.
+    * [x] **Task 6.4:** Extraction Engines - 10/10 tests, PDF (PyMuPDF) + DOCX (python-docx) with fallback.
+    * [/] **Task 6.5:** Integration Pipeline - SPEC FROZEN, ready for implementation (T30.01-T30.04).
 
 ---
 
