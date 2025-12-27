@@ -67,7 +67,7 @@ class HeavyEventBus:
     
     def __init__(
         self,
-        max_queue_size: int = 10000,
+        max_queue_size: int = 200000,  # 200K buffer for 20s of peak load
         max_workers: Optional[int] = None,
         name: str = "default"
     ):
