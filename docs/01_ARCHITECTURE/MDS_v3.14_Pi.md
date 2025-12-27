@@ -1,7 +1,9 @@
 # MDS v3.14 Pi — Technical Strategy Mapping (Crystal Edition)
 
-> **Ref:** TASK-5.3 (Hybrid SSOT) | **Audit:** OMEGA_ARCH | **Status:** FROZEN
-> **Phiên bản:** Kỹ thuật, Thực thi, Không Marketing.
+> **Ref:** TASK-5.3 (Hybrid SSOT) | **Audit:** OMEGA_ARCH | **Status:** ACTIVE
+> **Last Updated:** 2025-12-27 (December Edition)
+> **Python:** 3.14.2 (Free-Threading Experimental)
+> **Current Sprint:** 6 - Background Services Core
 > **Mục tiêu:** Biến "Trust Framework" thành Code chạy được (Rust Core + Python Brain + Svelte Face).
 
 ---
@@ -123,6 +125,11 @@ Chúng ta không xây dựng **Utility** (Công cụ chuyển đổi), chúng ta
     * [ ] HomeShelf Component.
     * [ ] SplitView Logic.
     * [ ] SQLite WAL Tuning.
+
+4.  **Phase 4: Background Services (Sprint 6 - CURRENT)**
+    * [x] **Task 6.1:** Watchdog Core - File system monitoring with debouncing (15/15 tests PASSED).
+    * [ ] **Task 6.2:** EventBus - Pub/Sub for cross-module communication.
+    * [ ] **Task 6.3:** Indexer Queue - SQLite-based job queue.
 
 ---
 

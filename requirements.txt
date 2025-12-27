@@ -1,15 +1,21 @@
-# MDS v3.14 - Python 3.14 Free-Threading Dependencies
-# Sprint 4: The Cryptographic Vault
-# Last Updated: 2025-11-22
+# MDS v3.14 Pi — Dependencies & Technical Strategy
+# ==================================================
+# Last Updated: 2025-12-27 (December Edition)
+# Python Version: 3.14.2 (Free-Threading Experimental)
+# Sprint: 6 - Background Services Core
 
 # ============================================================================
 # Core Backend (FastAPI + Async)
 # ============================================================================
-fastapi==0.121.3        # Security patched, Py3.14 compatible
-uvicorn==0.38.0         # ASGI server with Py3.14 support
-orjson==3.11.4          # Fast JSON serialization (pre-compiled wheels)
-aiosqlite==0.21.0       # Async SQLite wrapper
-watchdog>=4.0.0         # File system event monitoring (Sprint 6)
+fastapi>=0.125.0        # Latest security patches, Py3.14 compatible
+uvicorn>=0.40.0         # ASGI server with Py3.14 support
+orjson>=3.12.0          # Fast JSON serialization
+aiosqlite>=0.21.0       # Async SQLite wrapper
+
+# ============================================================================
+# File System Monitoring (Sprint 6.1 - Watchdog Core)
+# ============================================================================
+watchdog>=6.0.0         # File system event monitoring (Thread-safe)
 
 # ============================================================================
 # Cryptography (Sprint 4 - ADR-002)
@@ -18,21 +24,33 @@ watchdog>=4.0.0         # File system event monitoring (Sprint 6)
 cffi>=2.0.0             # Required for PyNaCl thread safety
 
 # Primary crypto provider (libsodium bindings)
-pynacl>=1.5.0,<2.0.0    # XChaCha20-Poly1305, HMAC, key derivation
+pynacl>=1.6.0,<2.0.0    # XChaCha20-Poly1305, HMAC, key derivation
 
 # Fallback crypto provider (if PyNaCl wheels unavailable)
-pycryptodome>=3.17.0,<4.0.0  # XChaCha20 support, self-contained
+pycryptodome>=3.21.0,<4.0.0  # XChaCha20 support, self-contained
+
+# ============================================================================
+# Data Validation (Layer 2 - Orchestration)
+# ============================================================================
+pydantic>=2.10.0        # Data validation with Py3.14 support
+pathspec>=0.12.0        # Gitignore style pattern matching
 
 # ============================================================================
 # Development & Testing
 # ============================================================================
-pytest>=8.0.0           # Testing framework
-pytest-asyncio>=0.23.0  # Async test support
-pytest-timeout>=2.2.0   # Timeout for long-running tests
-pytest-cov>=4.1.0       # Code coverage
+pytest>=8.2.0           # Testing framework
+pytest-asyncio>=0.25.0  # Async test support
+pytest-timeout>=2.3.0   # Timeout for long-running tests
+pytest-cov>=6.0.0       # Code coverage
+pytest-mock>=3.15.0     # Mock utilities
+
+# ============================================================================
+# Code Quality
+# ============================================================================
+ruff>=0.8.0             # Fast Python linter (replaces Black/Isort/Flake8)
 
 # ============================================================================
 # Packaging & Deployment
 # ============================================================================
-pyinstaller>=6.0.0      # Executable bundling
-structlog>=24.1.0
+pyinstaller>=6.12.0     # Executable bundling
+structlog>=24.4.0       # Structured logging

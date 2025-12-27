@@ -28,3 +28,11 @@
 - [ ] Runtime: No errors.
 - [ ] Tests: pytest PASSED.
 - [ ] Artifacts: Screenshot/Logs confirmed.
+
+## 5. IMPORT & PATHING RULES (BẮT BUỘC)
+- **Import Path:** Mọi import trong code và test phải bắt đầu từ `src.`
+  - ✅ Đúng: `from src.core.services.watchdog import WatchdogService`
+  - ❌ Sai: `from services.watchdog import Watchdog`
+- **PYTHONPATH:** Sử dụng `PYTHONPATH=.` hoặc `pytest.ini` với `pythonpath = .`
+- **Path Normalization:** Ép toàn bộ path về `Path(p).as_posix()` cho cross-platform.
+- **Package Structure:** Mọi thư mục Python cần có `__init__.py`.

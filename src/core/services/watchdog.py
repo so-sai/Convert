@@ -16,19 +16,21 @@ Does NOT:
 """
 import threading
 import time
+import uuid
 from pathlib import Path
 from typing import Callable, Set, Optional, List, Dict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
 
 
 @dataclass
 class FileEvent:
-    """Normalized file event"""
-    path: str
+    """Normalized file event with POSIX path"""
+    path: str  # Always POSIX format (forward slashes)
     event_type: str  # 'created', 'modified', 'deleted'
     timestamp: float
+    batch_id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
 
 class WatchdogService:
@@ -43,7 +45,8 @@ class WatchdogService:
         self,
         watch_path: str,
         debounce_ms: int = 1000,
-        on_batch_ready: Optional[Callable[[List[FileEvent]], None]] = None
+        on_batch_ready: Optional[Callable[[List[FileEvent]], None]] = None,
+        max_batch_size: int = 5000
     ):
         """
         Initialize Watchdog service.
@@ -52,15 +55,20 @@ class WatchdogService:
             watch_path: Directory to monitor
             debounce_ms: Milliseconds to wait before emitting batch
             on_batch_ready: Callback function for processed batches
+            max_batch_size: Safety valve - force emit if exceeded
         """
-        self.watch_path = watch_path
+        self.watch_path = Path(watch_path).as_posix()  # Normalize to POSIX
         self.debounce_ms = debounce_ms
         self.on_batch_ready = on_batch_ready
+        self.max_batch_size = max_batch_size
         
         # Thread-safe event storage
         self._pending_events: Set[str] = set()
         self._event_details: Dict[str, FileEvent] = {}
         self._lock = threading.Lock()
+        
+        # Debounce timer tracking
+        self._last_event_time: float = 0.0
         
         # Lifecycle management
         self._observer: Optional[Observer] = None
@@ -79,17 +87,53 @@ class WatchdogService:
         Deduplicates and stores events for batching.
         
         Args:
-            file_path: Path to the file
+            file_path: Path to the file (will be normalized to POSIX)
             event_type: Type of event (created/modified/deleted)
         """
+        # Normalize path to POSIX format (forward slashes only)
+        normalized_path = Path(file_path).as_posix()
+        current_time = time.time()
+        
         with self._lock:
-            # Deduplicate by path
-            self._pending_events.add(file_path)
-            self._event_details[file_path] = FileEvent(
-                path=file_path,
+            # Reset debounce timer on each new event
+            self._last_event_time = current_time
+            
+            # Deduplicate by normalized path
+            self._pending_events.add(normalized_path)
+            self._event_details[normalized_path] = FileEvent(
+                path=normalized_path,
                 event_type=event_type,
-                timestamp=time.time()
+                timestamp=current_time
             )
+            
+            # Safety valve: force emit if batch too large
+            if len(self._pending_events) >= self.max_batch_size:
+                self._flush_batch_unsafe()  # Called inside lock
+            
+    def _flush_batch_unsafe(self):
+        """
+        Flush batch without acquiring lock (called from within locked context).
+        Used by safety valve.
+        """
+        if not self._pending_events:
+            return
+            
+        # Collect batch
+        batch = [
+            self._event_details[path] 
+            for path in self._pending_events
+        ]
+        
+        # Clear pending
+        self._pending_events.clear()
+        self._event_details.clear()
+        
+        # Emit batch (callback may be slow, but we're in safety valve mode)
+        if self.on_batch_ready and batch:
+            try:
+                self.on_batch_ready(batch)
+            except Exception as e:
+                print(f"[WATCHDOG] Error in batch callback (safety valve): {e}")
             
     def _flush_batch(self):
         """
