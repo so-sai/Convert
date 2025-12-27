@@ -9,6 +9,7 @@ fastapi==0.121.3        # Security patched, Py3.14 compatible
 uvicorn==0.38.0         # ASGI server with Py3.14 support
 orjson==3.11.4          # Fast JSON serialization (pre-compiled wheels)
 aiosqlite==0.21.0       # Async SQLite wrapper
+watchdog>=4.0.0         # File system event monitoring (Sprint 6)
 
 # ============================================================================
 # Cryptography (Sprint 4 - ADR-002)

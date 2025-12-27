@@ -21,15 +21,14 @@ pub fn run() {
         .setup(|app| {
             use tauri::Manager;
             let window = app.get_webview_window("main").unwrap();
-            let window_clone = window.clone();
 
-            window.on_window_event(move |event| match event {
+            window.on_window_event(|event| match event {
                 tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Enter { paths, .. }) => {
                     println!("🔍 [RUST DEBUG] File Hover detected: {:?}", paths);
                 }
                 tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Drop { paths, .. }) => {
                     println!("✅ [RUST DEBUG] File Dropped: {:?}", paths);
-                    window_clone.emit("file-uploaded", &paths).unwrap();
+                    window.emit("file-uploaded", &paths).unwrap();
                 }
                 tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Leave { .. }) => {
                     println!("❌ [RUST DEBUG] File Drop Cancelled/Left");

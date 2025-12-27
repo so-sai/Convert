@@ -67,7 +67,7 @@
     updateTheme();
 
     // Welcome
-    toast.add("Convert Protocol Ready. Drop .cvbak or use Open File.", "info");
+    toast.add("Hệ thống TACHFILE_TO đã sẵn sàng. Thả file .xlsx hoặc Mở File.", "info");
 
     // Listen for custom "file-uploaded" event from Rust (Manual bridge)
     const unlistenUploaded = await listen("file-uploaded", async (event) => {
@@ -75,20 +75,19 @@
       const paths = event.payload;
       if (paths && paths.length > 0) {
           const filePath = paths[0];
-          if (filePath.endsWith(".cvbak")) {
-             toast.add(`🚀 Received: ${filePath.split("\\").pop()}`, "info");
+          if (filePath.endsWith(".xlsx") || filePath.endsWith(".xls") || filePath.endsWith(".cvbak")) {
+             toast.add(`🚀 Đã nhận: ${filePath.split("\\").pop()}`, "info");
              // Trigger restore logic
              try {
-                const res = await invoke("cmd_restore_from_file", { filePath: filePath });
-                console.log("✅ Restore result:", res);
-                toast.add("Backup loaded!", "success");
-                showRecovery = true;
+                const res = await invoke("load_excel_file", { filePath: filePath });
+                console.log("✅ Dữ liệu đã tải:", res);
+                toast.add(`Đã tải ${res.toLocaleString()} dòng dữ liệu!`, "success");
              } catch (err) {
-                console.error("❌ Restore error:", err);
-                toast.add(`Restore failed: ${err}`, "error");
+                console.error("❌ Lỗi tải file:", err);
+                toast.add(`Lỗi tải dữ liệu: ${err}`, "error");
              }
           } else {
-             toast.add("Ignored non-.cvbak file", "warning");
+             toast.add("Chỉ hỗ trợ file Excel (.xlsx, .xls)", "warning");
           }
       }
     });
@@ -99,23 +98,21 @@
         console.log("🔥 [App.svelte] File dropped:", event.payload);
         const filePath = event.payload?.[0];
 
-        if (filePath && filePath.endsWith(".cvbak")) {
-          toast.add(`File detected: ${filePath.split("\\").pop()}`, "info");
+        if (filePath && (filePath.endsWith(".xlsx") || filePath.endsWith(".xls"))) {
+          toast.add(`Phát hiện file: ${filePath.split("\\").pop()}`, "info");
 
           try {
-            // CRITICAL FIX: Use 'filePath' (camelCase) here too
-            const res = await invoke("cmd_restore_from_file", {
+            const res = await invoke("load_excel_file", {
               filePath: filePath,
             });
-            console.log("✅ Restore result:", res);
-            toast.add("Backup loaded!", "success");
-            showRecovery = true;
+            console.log("✅ Dữ liệu đã tải:", res);
+            toast.add(`Đã tải ${res.toLocaleString()} dòng dữ liệu!`, "success");
           } catch (err) {
-            console.error("❌ Restore error:", err);
-            toast.add(`Restore failed: ${err}`, "error");
+            console.error("❌ Lỗi tải file:", err);
+            toast.add(`Lỗi tải dữ liệu: ${err}`, "error");
           }
         } else if (filePath) {
-          toast.add("Only .cvbak files are supported", "error");
+          toast.add("Chỉ hỗ trợ file Excel (.xlsx, .xls)", "error");
         }
       });
       console.log("✅ [App.svelte] Direct drop listener registered");
@@ -125,9 +122,8 @@
 
     // Listen for backup-loaded event from DropZone
     window.addEventListener("backup-loaded", (e) => {
-      console.log("📦 Backup loaded event:", e.detail);
-      showRecovery = true;
-      toast.add("Recovery Interface Activated", "success");
+      console.log("📦 Dữ liệu đã tải:", e.detail);
+      toast.add("Giao diện khôi phục đã kích hoạt", "success");
     });
   });
 </script>
@@ -168,15 +164,18 @@
 
   <section class="content-area">
     <header class="hero-header">
-      <div class="badge">SPRINT 5 READY</div>
-      <h1>Hello, Architect.</h1>
+      <div class="brand-strip">
+        <h1 class="font-mono">TACHFILE_TO</h1>
+        <span class="version-tag">v2.1</span>
+      </div>
+      <h2>Xin chào, Kiến trúc sư.</h2>
       <p>
-        <span>Drop your <code>.cvbak</code> file anywhere</span>
-        <span class="or-separator">or</span>
+        <span>Kéo thả file <code>.xlsx</code> vào đây để bắt đầu</span>
+        <span class="or-separator">hoặc</span>
       </p>
       <button class="open-file-btn" onclick={openBackupFile}>
         <FolderOpen size={18} />
-        Open Backup File
+        Mở File Excel
       </button>
     </header>
 
@@ -185,8 +184,8 @@
         <div class="card-bg-icon"><Box size={120} /></div>
         <div class="card-body">
           <div class="icon-circle"><Box size={24} /></div>
-          <h3>CONVERT</h3>
-          <p>Universal Format Engine</p>
+          <h3>CHUYỂN ĐỔI</h3>
+          <p>Engine chuẩn hóa dữ liệu</p>
         </div>
       </button>
 
@@ -194,8 +193,8 @@
         <div class="card-bg-icon"><Book size={120} /></div>
         <div class="card-body">
           <div class="icon-circle"><Book size={24} /></div>
-          <h3>NOTES</h3>
-          <p>Secure Knowledge Vault</p>
+          <h3>GHI CHÚ</h3>
+          <p>Kho lưu trữ an toàn</p>
         </div>
       </button>
 
@@ -203,8 +202,8 @@
         <div class="card-bg-icon"><Zap size={120} /></div>
         <div class="card-body">
           <div class="icon-circle"><Zap size={24} /></div>
-          <h3>WORKFLOW</h3>
-          <p>AI Agent Orchestration</p>
+          <h3>QUY TRÌNH</h3>
+          <p>Điều phối AI Agent</p>
         </div>
       </button>
     </div>
@@ -286,6 +285,28 @@
 
   .hero-header {
     margin-bottom: 48px;
+  }
+
+  .brand-strip {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .brand-strip h1 {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    color: var(--text-main);
+    margin: 0;
+  }
+
+  .version-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-sub);
+    opacity: 0.6;
   }
 
   .badge {

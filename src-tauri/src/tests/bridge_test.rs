@@ -3,7 +3,7 @@
 //! RED PHASE: These tests verify MDS v3.14 compliance (no subprocess, embedded Python only).
 
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyModule};
+use pyo3::types::PyDict;
 
 #[test]
 fn test_python_interpreter_initializes() {

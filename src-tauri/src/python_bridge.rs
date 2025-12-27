@@ -9,8 +9,8 @@
 
 use once_cell::sync::Lazy;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
-use serde_json::{json, Value};
+use pyo3::types::PyDict;
+use serde_json::Value;
 use std::env;
 use std::path::PathBuf;
 use std::sync::Mutex;

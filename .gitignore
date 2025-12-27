@@ -71,3 +71,6 @@ build_log.txt
 
 # --- 7. ANTIGRAVITY ---
 .antigravity/
+
+# SOP v1.0 Context
+.project-context/ACTIVE_MISSION.md
