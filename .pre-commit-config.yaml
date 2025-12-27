@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: security-foundation-audit
+        name: Security Foundation Audit (Critical)
+        entry: pytest tests/indexer/test_security_foundation.py --strict -v
+        language: system
+        pass_filenames: false
+        always_run: true
+        description: Prevents commits if any of the 17 security tests fail.

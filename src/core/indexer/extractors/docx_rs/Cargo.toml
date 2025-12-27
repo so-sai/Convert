@@ -1,0 +1,19 @@
+[package]
+name = "docx_extractor"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "docx_extractor"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.23", features = ["extension-module"] }
+docx-rs = "0.4"
+anyhow = "1.0"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true

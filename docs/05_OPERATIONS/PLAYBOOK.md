@@ -254,7 +254,7 @@ All ADRs must include:
 ## 7. DIRECTORY STRUCTURE
 
 ```
-E:/DEV/Convert/
+E:/DEV/app-desktop-Convert/
 ├── docs/                     # Documentation (you are here)
 ├── scripts/                  # DevOps tools
 ├── src/core/                 # Python backend

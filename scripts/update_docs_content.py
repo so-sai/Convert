@@ -53,7 +53,7 @@ ARGON2_SALT_BYTES         = 16
 ## 6. PHYSICAL DIRECTORY STRUCTURE (CONFIRMED)
 
 ```text
-E:/DEV/Convert/
+E:/DEV/app-desktop-Convert/
 ├── docs/                       # [KNOWLEDGE BASE]
 │   ├── 01_ARCHITECTURE/        # SSOT (DECISIONS, MDS)
 │   ├── 04_KNOWLEDGE/           # Lessons Learned

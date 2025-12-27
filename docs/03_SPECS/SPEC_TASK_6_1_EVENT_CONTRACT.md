@@ -16,7 +16,7 @@ Watchdog **ONLY** emits a standardized `FileBatchEvent` object.
   "event_type": "BATCH_CHANGED",
   "batch_id": "uuid-v4-string",
   "timestamp": 1735281000.500,
-  "source_path": "E:/DEV/Convert/content",
+  "source_path": "E:/DEV/app-desktop-Convert/content",
   "changes": {
     "created": ["note_01.md", "image_A.png"],
     "modified": ["draft_B.md"],

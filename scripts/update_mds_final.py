@@ -44,7 +44,7 @@ MDS_CONTENT = r'''# 📘 MDS v3.14 - THE IRON VAULT (CONVERGED EDITION)
 
 ## 3. PHYSICAL DIRECTORY STRUCTURE (CONFIRMED)
 ```text
-E:/DEV/Convert/
+E:/DEV/app-desktop-Convert/
 ├── .github/                    # CI/CD Workflows
 ├── assets/                     # 🎨 RESOURCES (Restored)
 │   ├── icons/                  # App icons (.ico, .png)

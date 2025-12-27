@@ -3,7 +3,7 @@ from pathlib import Path
 
 # Đảm bảo đường dẫn gốc
 try:
-    os.chdir("E:/DEV/Convert")
+    os.chdir("E:/DEV/app-desktop-Convert")
 except:
     pass
 

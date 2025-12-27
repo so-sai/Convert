@@ -18,7 +18,7 @@ import sqlite3
 import threading
 import time
 import uuid
-from collections import deque
+from collections import deque, OrderedDict
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
@@ -27,6 +27,59 @@ try:
     from src.core.services.eventbus import HeavyEventBus
 except ImportError:
     HeavyEventBus = None  # type: ignore
+
+
+# ===================================================================
+# MEMORY-SAFE LRU CACHE (EMERGENCY FIX - Prevents OOM after long runs)
+# ===================================================================
+
+class SecureLRUCache:
+    """
+    Thread-safe LRU cache with fixed memory boundary.
+    
+    Prevents memory leak by evicting oldest entries when full.
+    Designed for idempotency checking where recent IDs are most important.
+    
+    Memory: maxsize=10000 × ~108 bytes = ~1MB (fixed)
+    """
+    
+    def __init__(self, maxsize: int = 10000):
+        self.maxsize = maxsize
+        self._cache: OrderedDict = OrderedDict()
+        self._lock = threading.RLock()
+    
+    def add(self, key: str) -> bool:
+        """
+        Add key to cache. Returns True if newly added, False if existed.
+        Evicts oldest entry if cache is full.
+        """
+        with self._lock:
+            if key in self._cache:
+                # Move to end (most recently used)
+                self._cache.move_to_end(key)
+                return False  # Already existed
+            
+            # Add new entry
+            self._cache[key] = True
+            
+            # Evict oldest if over limit
+            if len(self._cache) > self.maxsize:
+                self._cache.popitem(last=False)
+            
+            return True  # Newly added
+    
+    def __contains__(self, key: str) -> bool:
+        """Check if key exists (O(1) lookup)."""
+        with self._lock:
+            return key in self._cache
+    
+    def __len__(self) -> int:
+        with self._lock:
+            return len(self._cache)
+    
+    def clear(self) -> None:
+        with self._lock:
+            self._cache.clear()
 
 
 # ===================================================================
@@ -113,8 +166,9 @@ class IndexerQueue:
         self._buffer_lock = threading.Lock()
         
         # Processed event IDs cache (for idempotency check)
-        self._processed_ids: set = set()
-        self._processed_ids_lock = threading.Lock()
+        # MEMORY-SAFE: LRU cache with 10K limit (~1MB) instead of unbounded set
+        self._processed_ids: SecureLRUCache = SecureLRUCache(maxsize=10000)
+        self._processed_ids_lock = threading.Lock()  # External lock for compound ops
         
         # Metrics
         self._events_received = 0
@@ -226,6 +280,10 @@ class IndexerQueue:
         """
         Callback when event is received from EventBus.
         
+        Uses dual-layer idempotency check:
+        1. L1: In-memory LRU cache (fast, ~1MB limit)
+        2. L2: SQLite fallback (for old IDs evicted from cache)
+        
         Args:
             event: Event data (dict with event_id)
         """
@@ -241,12 +299,19 @@ class IndexerQueue:
         if not event_id:
             event_id = str(uuid.uuid4())
         
-        # Check for duplicate (in-memory cache is authoritative)
+        # DUAL-LAYER IDEMPOTENCY CHECK (Memory-safe)
+        # Layer 1: LRU cache check (O(1), covers recent ~10K events)
         with self._processed_ids_lock:
             if event_id in self._processed_ids:
                 with self._metrics_lock:
                     self._events_duplicate += 1
-                return  # Skip duplicate
+                return  # Skip duplicate (found in L1 cache)
+            
+            # Layer 2: SQLite fallback for old events evicted from cache
+            if self._is_event_in_database(event_id):
+                with self._metrics_lock:
+                    self._events_duplicate += 1
+                return  # Skip duplicate (found in L2 database)
             
             # Mark as seen IMMEDIATELY (before adding to buffer)
             # This prevents duplicates from entering buffer before flush
@@ -266,6 +331,25 @@ class IndexerQueue:
             # Check if we should flush
             if len(self._buffer) >= self.batch_size:
                 self._flush_buffer()
+    
+    def _is_event_in_database(self, event_id: str) -> bool:
+        """
+        Check if event_id exists in processed_events table (L2 fallback).
+        
+        Called when LRU cache misses, for old events that were evicted.
+        """
+        try:
+            conn = self._get_connection()
+            with self._db_lock:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT 1 FROM processed_events WHERE event_id = ? LIMIT 1",
+                    (event_id,)
+                )
+                return cursor.fetchone() is not None
+        except Exception:
+            # If DB check fails, assume not duplicate (safer for data loss)
+            return False
     
     # -------------------------------------------------------------------
     # BUFFER MANAGEMENT

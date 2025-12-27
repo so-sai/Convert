@@ -2,7 +2,7 @@ import os
 
 # Đảm bảo đường dẫn
 try:
-    os.chdir("E:/DEV/Convert")
+    os.chdir("E:/DEV/app-desktop-Convert")
 except:
     pass
 
