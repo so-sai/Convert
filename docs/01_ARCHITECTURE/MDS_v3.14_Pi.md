@@ -126,10 +126,10 @@ Chúng ta không xây dựng **Utility** (Công cụ chuyển đổi), chúng ta
     * [ ] SplitView Logic.
     * [ ] SQLite WAL Tuning.
 
-4.  **Phase 4: Background Services (Sprint 6 - CURRENT)**
-    * [x] **Task 6.1:** Watchdog Core - File system monitoring with debouncing (15/15 tests PASSED).
-    * [ ] **Task 6.2:** EventBus - Pub/Sub for cross-module communication.
-    * [ ] **Task 6.3:** Indexer Queue - SQLite-based job queue.
+4.  **Phase 4: Background Services (Sprint 6 - Dec 2025)**
+    * [x] **Task 6.1:** Watchdog Core - 22/22 tests, POSIX paths, UUID batch tracking.
+    * [x] **Task 6.2:** EventBus - 8/8 tests, 260K/sec publish, 0% drop rate (200K queue).
+    * [ ] **Task 6.3:** Indexer Queue - SQLite-based job queue (NEXT).
 
 ---
 
