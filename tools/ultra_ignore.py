@@ -1,0 +1,108 @@
+"""
+Ultra-Ignore - Maximum strength .gitignore for SQLCipher artifacts
+Uses strongest wildcards to block locked source directories
+"""
+
+from pathlib import Path
+
+def apply_ultra_ignore():
+    """Apply ultra-strong .gitignore rules"""
+    
+    content = """# ============================================
+# ULTRA-IGNORE - MAXIMUM STRENGTH BLOCKING
+# ============================================
+
+# --- SYSTEM ARTIFACTS ---
+**/target/
+**/node_modules/
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+*.pyc
+*.pyo
+build/
+dist/
+*.egg-info/
+
+# --- IDE ---
+.vscode/
+.idea/
+
+# ============================================
+# SQLCIPHER LOCKDOWN (STRONGEST WILDCARDS)
+# ============================================
+
+# Block entire sqlcipher3/src and all subdirectories
+sqlcipher3/src/
+sqlcipher3/src/**
+sqlcipher3/src/*
+
+# Block entire sqlcipher3/include and all subdirectories
+sqlcipher3/include/
+sqlcipher3/include/**
+sqlcipher3/include/*
+
+# Block entire sqlcipher3/lib and all subdirectories
+sqlcipher3/lib/
+sqlcipher3/lib/**
+sqlcipher3/lib/*
+
+# Block other artifact directories
+sqlcipher3/build/
+sqlcipher3/build/**
+sqlcipher3/sqlcipher-4.12.0/
+sqlcipher3/sqlcipher-4.12.0/**
+sqlcipher3/tests/
+sqlcipher3/ext/
+
+# Block artifact files
+sqlcipher3/*.c
+sqlcipher3/*.h
+sqlcipher3/*.obj
+sqlcipher3/*.zip
+sqlcipher3/setup.cfg
+sqlcipher3/MANIFEST.in
+
+# ============================================
+# STRATEGIC ASSETS - FORCE INCLUDE
+# ============================================
+
+# Keep the compiled binary folder
+!sqlcipher3/sqlcipher3/
+!sqlcipher3/sqlcipher3/_sqlite3.pyd
+!sqlcipher3/sqlcipher3/__init__.py
+!sqlcipher3/sqlcipher3/dbapi2.py
+!sqlcipher3/sqlcipher3/dump.py
+
+# Keep build scripts
+!sqlcipher3/package_sqlcipher.py
+!sqlcipher3/test_wheel_install.py
+!sqlcipher3/auto_build_sqlcipher.py
+
+# Keep metadata
+!sqlcipher3/README.md
+!sqlcipher3/LICENSE
+!sqlcipher3/.gitignore
+!sqlcipher3/.github/
+"""
+    
+    Path(".gitignore").write_text(content, encoding="utf-8")
+    
+    print("="*60)
+    print("🛡️  ULTRA-IGNORE APPLIED")
+    print("="*60)
+    print("\n✅ Maximum strength wildcards active:")
+    print("   • sqlcipher3/src/**  → BLOCKED")
+    print("   • sqlcipher3/include/** → BLOCKED")
+    print("   • sqlcipher3/lib/** → BLOCKED")
+    print("\n✅ Strategic assets PRESERVED:")
+    print("   • sqlcipher3/sqlcipher3/_sqlite3.pyd")
+    print("   • sqlcipher3/*.py scripts")
+    print("\n📋 NEXT STEPS:")
+    print("   git rm -rf --cached .")
+    print("   git add .")
+    print("   git ls-files | wc -l")
+    print("="*60)
+
+if __name__ == "__main__":
+    apply_ultra_ignore()

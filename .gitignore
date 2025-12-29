@@ -1,8 +1,8 @@
 # ============================================
-# ARCH_PRIME CONSTITUTION - GITIGNORE RULES
+# ULTRA-IGNORE - MAXIMUM STRENGTH BLOCKING
 # ============================================
 
-# --- SYSTEM ARTIFACTS (NEVER COMMIT) ---
+# --- SYSTEM ARTIFACTS ---
 **/target/
 **/node_modules/
 **/__pycache__/
@@ -10,66 +10,67 @@
 **/.mypy_cache/
 *.pyc
 *.pyo
-*.pdb
-*.obj
-*.exp
-*.ilk
 build/
 dist/
-*.egg-info
+*.egg-info/
 
-# --- RUST BUILD ARTIFACTS ---
-**/Cargo.lock
-**/target/debug/
-**/target/release/
-
-# --- PYTHON BUILD ARTIFACTS ---
-*.so
-*.dll
-*.dylib
-__pycache__/
-*.py[cod]
-*$py.class
-
-# --- C/C++ BUILD ARTIFACTS ---
-*.o
-*.obj
-*.lib
-*.exp
-*.pdb
-*.ilk
-
-# --- IDE & EDITOR ---
+# --- IDE ---
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
-
-# --- OS SPECIFIC ---
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# --- LOGS & DATABASES ---
-*.log
-*.sqlite
-*.db
 
 # ============================================
-# STRATEGIC ASSETS (FORCE INCLUDE)
+# SQLCIPHER LOCKDOWN (STRONGEST WILDCARDS)
 # ============================================
 
-# SQLCipher compiled binary (critical asset)
+# Block entire sqlcipher3/src and all subdirectories
+sqlcipher3/src/
+sqlcipher3/src/**
+sqlcipher3/src/*
+
+# Block entire sqlcipher3/include and all subdirectories
+sqlcipher3/include/
+sqlcipher3/include/**
+sqlcipher3/include/*
+
+# Block entire sqlcipher3/lib and all subdirectories
+sqlcipher3/lib/
+sqlcipher3/lib/**
+sqlcipher3/lib/*
+
+# Block other artifact directories
+sqlcipher3/build/
+sqlcipher3/build/**
+sqlcipher3/sqlcipher-4.12.0/
+sqlcipher3/sqlcipher-4.12.0/**
+sqlcipher3/tests/
+sqlcipher3/ext/
+
+# Block artifact files
+sqlcipher3/*.c
+sqlcipher3/*.h
+sqlcipher3/*.obj
+sqlcipher3/*.zip
+sqlcipher3/setup.cfg
+sqlcipher3/MANIFEST.in
+
+# ============================================
+# STRATEGIC ASSETS - FORCE INCLUDE
+# ============================================
+
+# Keep the compiled binary folder
+!sqlcipher3/sqlcipher3/
 !sqlcipher3/sqlcipher3/_sqlite3.pyd
 !sqlcipher3/sqlcipher3/__init__.py
 !sqlcipher3/sqlcipher3/dbapi2.py
 !sqlcipher3/sqlcipher3/dump.py
 
-# Documentation
-!docs/**/*.md
+# Keep build scripts
+!sqlcipher3/package_sqlcipher.py
+!sqlcipher3/test_wheel_install.py
+!sqlcipher3/auto_build_sqlcipher.py
 
-# Configuration
-!pyproject.toml
-!pytest.ini
-!requirements*.txt
+# Keep metadata
+!sqlcipher3/README.md
+!sqlcipher3/LICENSE
+!sqlcipher3/.gitignore
+!sqlcipher3/.github/
