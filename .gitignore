@@ -1,76 +1,75 @@
-# ===================================
-# 🛡️ THE IRON VAULT - GITIGNORE 🛡️
-# ===================================
+# ============================================
+# ARCH_PRIME CONSTITUTION - GITIGNORE RULES
+# ============================================
 
-# --- 1. DATABASE & SECURITY (CRITICAL) ---
-# Chặn tuyệt đối database để tránh lộ data
-*.db
-*.db-shm
-*.db-wal
-*.sqlite
-*.sqlite3
-*.cvbak
-*.cvdb
-
-# Chặn key và secret
-.env
-.env.*
-*.pem
-*.key
-*.p12
-
-# --- 2. RUST & TAURI ARTIFACTS ---
-/target/
-/src-tauri/target/
-/src-tauri/gen/
-**/*.rs.bk
-
-# --- 3. FRONTEND ARTIFACTS (SVELTE/VITE) ---
-node_modules/
+# --- SYSTEM ARTIFACTS (NEVER COMMIT) ---
+**/target/
 **/node_modules/
-/src-ui/node_modules/
-/src-ui/.svelte-kit/
-/src-ui/build/
-/src-ui/dist/
-/src-ui/.vercel/
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+*.pyc
+*.pyo
+*.pdb
+*.obj
+*.exp
+*.ilk
+build/
+dist/
+*.egg-info
 
-# --- 4. PYTHON ARTIFACTS ---
+# --- RUST BUILD ARTIFACTS ---
+**/Cargo.lock
+**/target/debug/
+**/target/release/
+
+# --- PYTHON BUILD ARTIFACTS ---
+*.so
+*.dll
+*.dylib
 __pycache__/
 *.py[cod]
 *$py.class
-.Python
-env/
-venv/
-.venv/
-.pytest_cache/
-.coverage
-htmlcov/
-src/*.egg-info/
 
-# --- 5. TEST ARTIFACTS ---
-test_db*
-backup_test*
-heavy_test*
-src-tauri/tests/*.db
-src-tauri/tests/*.cvbak
+# --- C/C++ BUILD ARTIFACTS ---
+*.o
+*.obj
+*.lib
+*.exp
+*.pdb
+*.ilk
 
-# --- 6. OS & EDITOR JUNK ---
-.DS_Store
-Thumbs.db
-Desktop.ini
+# --- IDE & EDITOR ---
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+
+# --- OS SPECIFIC ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- LOGS & DATABASES ---
 *.log
-*.tmp
-build_log.txt
+*.sqlite
+*.db
 
-# --- 7. ANTIGRAVITY ---
-.antigravity/
+# ============================================
+# STRATEGIC ASSETS (FORCE INCLUDE)
+# ============================================
 
-# SOP v1.0 Context
-.project-context/ACTIVE_MISSION.md
+# SQLCipher compiled binary (critical asset)
+!sqlcipher3/sqlcipher3/_sqlite3.pyd
+!sqlcipher3/sqlcipher3/__init__.py
+!sqlcipher3/sqlcipher3/dbapi2.py
+!sqlcipher3/sqlcipher3/dump.py
+
+# Documentation
+!docs/**/*.md
+
+# Configuration
+!pyproject.toml
+!pytest.ini
+!requirements*.txt

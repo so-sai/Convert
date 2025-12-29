@@ -127,8 +127,7 @@ class ProcessingRegistry:
     
     Thread-safe for Python 3.14 No-GIL.
     Uses RLock for mutation, lock-free for hot path (lookup).
-    
-    Features:
+Phase 1:
     - TTL-based expiration (default: 5 minutes)
     - Idempotency window (1 minute for completed events)
     - Retry logic (max 3 attempts)

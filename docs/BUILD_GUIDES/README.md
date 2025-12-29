@@ -63,24 +63,6 @@
 
 ---
 
-### 4. [SQLCIPHER_LESSONS_LEARNED.md](./SQLCIPHER_LESSONS_LEARNED.md)
-**Time-Saving Strategies** - Reduce build time from 6 hours to 30 minutes
-
-**Contents:**
-- ✅ Top 7 fatal errors with instant solutions
-- ✅ Optimized 30-minute build workflow
-- ✅ Time comparison (6h vs 30min)
-- ✅ Fully automated build script
-- ✅ ROI analysis and value metrics
-
-**When to read:**
-- Before attempting a rebuild
-- Understanding common pitfalls
-- Learning automation strategies
-- Maximizing team productivity
-
----
-
 ## 🚀 QUICK NAVIGATION
 
 ### I need to...
@@ -99,12 +81,6 @@
 
 **...deploy to production**
 → Check Deployment section in [SQLCIPHER_PACKAGING_GUIDE.md](./SQLCIPHER_PACKAGING_GUIDE.md#6-deployment-considerations)
-
-**...save time on rebuilds**
-→ Read [SQLCIPHER_LESSONS_LEARNED.md](./SQLCIPHER_LESSONS_LEARNED.md) (6h → 30min)
-
-**...automate the build process**
-→ Use `auto_build_sqlcipher.py` script in [SQLCIPHER_LESSONS_LEARNED.md](./SQLCIPHER_LESSONS_LEARNED.md#-script-tự-động-hóa-hoàn-chỉnh)
 
 ---
 

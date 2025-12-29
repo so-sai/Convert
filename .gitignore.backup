@@ -1,0 +1,13 @@
+# --- RÁC CẦN XÓA ---
+**/target/
+**/node_modules/
+**/__pycache__/
+*.pyc
+build/
+dist/
+*.obj
+*.pdb
+*.lib
+
+# --- GIỮ LẠI TÀI SẢN ---
+!sqlcipher3/sqlcipher3/_sqlite3.pyd
