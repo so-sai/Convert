@@ -133,8 +133,10 @@ Chúng ta không xây dựng **Utility** (Công cụ chuyển đổi), chúng ta
     * [x] **Task 6.3:** Indexer Queue - 10/10 tests, SQLite-based job queue, LRU cache idempotency.
     * [x] **Task 6.4:** Extraction Engines - 10/10 tests, PDF (PyMuPDF) + DOCX (python-docx) with fallback.
     * [x] **Task 6.5:** Integration Pipeline - 8/8 tests, XXH3 idempotency, full orchestration.
+    * [x] **SQLCipher Integration:** Built 4.12.0 for Python 3.14 No-GIL, AES-256 encryption, FTS5 enabled.
     * **Sprint Summary:** 41/41 tests GREEN, 95%+ coverage, <100ms latency, zero vulnerabilities.
-    * **Release:** `v0.6.0-omega-core` (commit: c3b9e74)
+    * **Repository Optimization:** Removed 285,303 lines of build artifacts, reduced from 575 to 272 files.
+    * **Release:** `v0.6.0-omega-core` (commit: 58dffa0)
 
 5.  **Phase 5: Frontend & Search UI (Sprint 7 - Dec 2025) 🚀 ACTIVE**
     * [ ] **Task 7.1:** Search UI with SvelteKit - Real-time FTS5 search interface.
