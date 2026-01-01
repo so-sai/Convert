@@ -1,10 +1,11 @@
 # MDS v3.14 Pi — Technical Strategy Mapping (Crystal Edition)
 
 > **Ref:** TASK-5.3 (Hybrid SSOT) | **Audit:** OMEGA_ARCH | **Status:** ACTIVE
-> **Last Updated:** 2025-12-28 (December Edition)
+> **Last Updated:** 2026-01-01 (New Year Edition - Jan 2026 Baseline)
 > **Python:** 3.14.2 (Free-Threading Experimental)
-> **Current Sprint:** 7 - Frontend & Search UI
-> **Previous Sprint:** 6 - Background Services Core ✅ COMPLETE (41/41 tests)
+> **Current Sprint:** 7 - Frontend & Search UI (STANDBY)
+> **Previous Sprint:** 6 - Background Services Core ✅ COMPLETE (45/45 tests)
+> **Milestone:** SQLCipher 4.12.0 + OpenSSL 3.x Integrated
 > **Mục tiêu:** Biến "Trust Framework" thành Code chạy được (Rust Core + Python Brain + Svelte Face).
 
 ---
@@ -34,10 +35,12 @@ Chúng ta không xây dựng **Utility** (Công cụ chuyển đổi), chúng ta
 1.  **Convert Engine v2.3:**
     * Pure Rust bindings. Sandbox file ops.
     * **Omega Fix:** Không dùng subprocess. Dùng PyO3 embedding trực tiếp (`maturin build`) để loại bỏ latency 30-40ms.
+    * **Build Standard:** Static Linking (/MT) để loại bỏ phụ thuộc DLL runtime.
 2.  **Vault Storage Kernel:**
     * Encrypted FS: XChaCha20-Poly1305 (24-byte nonce).
     * **Omega Fix:** `Argon2id` KDF parameters tối ưu hóa.
     * **Commit Flow:** Write → Seal → Hash → Sign → Expose to UI.
+    * **Security Standard:** OpenSSL 3.x (chấp nhận ngắt kết nối với 1.x lỗi thời).
 3.  **Security Enforcer:**
     * **Memory Hygiene:** Tự động zeroize bộ nhớ khi sleep/hibernate (Windows Power API hooks).
     * **Snapshot Binding:** Gắn output + hash tree + policy version.
@@ -134,9 +137,12 @@ Chúng ta không xây dựng **Utility** (Công cụ chuyển đổi), chúng ta
     * [x] **Task 6.4:** Extraction Engines - 10/10 tests, PDF (PyMuPDF) + DOCX (python-docx) with fallback.
     * [x] **Task 6.5:** Integration Pipeline - 8/8 tests, XXH3 idempotency, full orchestration.
     * [x] **SQLCipher Integration:** Built 4.12.0 for Python 3.14 No-GIL, AES-256 encryption, FTS5 enabled.
-    * **Sprint Summary:** 41/41 tests GREEN, 95%+ coverage, <100ms latency, zero vulnerabilities.
-    * **Repository Optimization:** Removed 285,303 lines of build artifacts, reduced from 575 to 272 files.
-    * **Release:** `v0.6.0-omega-core` (commit: 58dffa0)
+    * [x] **Extended Test Suite:** 4 additional industrial-grade tests (OpenSSL 3.x, concurrent access, performance, error handling).
+    * **Sprint Summary:** 45/45 tests GREEN (41 core + 4 extended), 95%+ coverage, <100ms latency, zero vulnerabilities.
+    * **Repository Optimization:** Removed 285,303 lines of build artifacts, reduced from 575 to 275 files (Golden State).
+    * **OSS Contribution:** PR submitted to coleifer/sqlcipher3 (Windows build fixes).
+    * **Documentation:** Created [OPEN_SOURCE_PROTOCOL.md](file:///e:/DEV/app-desktop-Convert/docs/OPEN_SOURCE_PROTOCOL.md) - OSS contribution guide.
+    * **Release:** `v0.6.0-omega-core` (commit: 82473eb)
 
 5.  **Phase 5: Frontend & Search UI (Sprint 7 - Dec 2025) 🚀 ACTIVE**
     * [ ] **Task 7.1:** Search UI with SvelteKit - Real-time FTS5 search interface.
