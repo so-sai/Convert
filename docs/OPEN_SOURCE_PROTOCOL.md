@@ -213,6 +213,40 @@ git checkout 6794294~1 -- sqlcipher3/sqlite3.c
 - Không restore amalgamation files (không cần)
 - **Result:** Clean PR → High chance of merge
 
+### 5. Định luật "Maintainer's Dilemma" (Bài học OpenSSL)
+
+**Tình huống:** Code đóng góp (PR) tốt hơn về mặt kỹ thuật (OpenSSL 3.x, C11, hiệu năng cao), nhưng Maintainer không merge nguyên bản mà chọn giải pháp an toàn hơn (Amalgamation default, vẫn hỗ trợ OpenSSL cũ).
+
+**Phân tích:**
+
+**Góc nhìn Contributor (Chúng ta):** Ưu tiên **"Production-Optimized"**
+- Cần hiệu năng cao nhất
+- Bảo mật mới nhất (OpenSSL 3.x)
+- Chạy tốt nhất trên môi trường hiện đại (Windows 11, Python 3.14)
+- Tối ưu cho use case cụ thể
+
+**Góc nhìn Maintainer (Upstream):** Ưu tiên **"Maintenance-Safe"**
+- Phải gánh trách nhiệm cho hàng ngàn người dùng
+- Hỗ trợ cả môi trường cũ (Windows 7, OpenSSL 1.x)
+- Sợ "Breaking Changes" hơn là cần tính năng mới
+- Tối ưu cho compatibility rộng nhất
+
+**Hành động chuẩn mực:**
+
+1. **Tôn trọng:** Không ép Upstream phải theo chuẩn cao của mình nếu điều đó làm khó họ trong việc bảo trì.
+
+2. **Giữ lại (Fork/Internal Build):** Tiếp tục sử dụng bản build tối ưu ("hàng may đo") cho dự án của mình để đảm bảo chất lượng Production.
+
+3. **Đóng PR đẹp:** Rút lui với lời cảm ơn và để lại giải pháp như một tài liệu tham khảo (Reference) cho cộng đồng.
+
+4. **Kết quả:** Ta có bản build xịn cho ta, cộng đồng có bản build ổn định cho họ. **Win-Win.**
+
+**SQLCipher Case Study:**
+- **Our build:** OpenSSL 3.x + C11 + Windows-specific optimizations → Production-grade
+- **Upstream choice:** Amalgamation + OpenSSL 1.x compatibility → Maintenance-safe
+- **Outcome:** We maintain our optimized fork, they maintain stable upstream
+- **Lesson:** Different goals require different solutions. Both are valid.
+
 ---
 
 ## IV. MẪU PR CHUẨN (TEMPLATE)
